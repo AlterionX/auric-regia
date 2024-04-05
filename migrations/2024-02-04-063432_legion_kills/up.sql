@@ -1,0 +1,14 @@
+CREATE TABLE legion_kill_count_changes (
+    id BIGSERIAL PRIMARY KEY,
+    created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updater NUMERIC NOT NULL,
+    target NUMERIC NOT NULL,
+    kills NUMERIC NOT NULL
+);
+
+CREATE TABLE legion_kill_counts (
+    id NUMERIC PRIMARY KEY,
+    created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated TIMESTAMP WITH TIME ZONE NOT NULL,
+    kills NUMERIC NOT NULL
+);

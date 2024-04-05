@@ -1,0 +1,9 @@
+[discord]
+token = ""
+application = 0
+
+[home_guild]
+id = 0
+
+[database]
+url = ""
