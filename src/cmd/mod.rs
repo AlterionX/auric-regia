@@ -390,7 +390,7 @@ impl CommandTreeTop {
     pub fn into_discord_command(self) -> CreateCommand {
         match self {
             Self::Secondary { name, description, kind, children } => {
-                let mut top_level = CreateCommand::new(name).description(description).kind(kind).default_member_permissions(Permissions::ADMINISTRATOR);
+                let mut top_level = CreateCommand::new(name).description(description).kind(kind).default_member_permissions(Permissions::READ_MESSAGE_HISTORY);
 
                 let subcommand_groups: Vec<_> = children.into_iter().map(|cti| {
                     let mut subcommand_group = CreateCommandOption::new(CommandOptionType::SubCommandGroup, cti.name, cti.description);

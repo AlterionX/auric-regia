@@ -59,10 +59,20 @@ impl DiscordHandler {
 impl EventHandler for DiscordHandler {
     async fn ready(&self, ctx: DiscordContext, _data_about_bot: Ready) {
         trc::info!("CMD-SETUP");
+        let commands: Vec<_> = cmd::generate_command_descriptions().into_iter().map(|ctt| ctt.into_discord_command()).collect();
+        trc::info!("CMD-SETUP-GUILD {:?}", self.home_guild_id);
         self.home_guild_id.set_commands(
             ctx.http(),
-            cmd::generate_command_descriptions().into_iter().map(|ctt| ctt.into_discord_command()).collect()
+            commands
         ).await.expect("commands should have updated appropriately");
+        // Commented out -- debugging.
+        // for guild in data_about_bot.guilds {
+        //     trc::info!("CMD-SETUP-GUILD {:?}", guild.id);
+        //     guild.id.set_commands(
+        //         ctx.http(),
+        //         commands.clone()
+        //     ).await.expect("commands should have updated appropriately");
+        // }
         trc::info!("CMD-SETUP-CMPL");
     }
 
