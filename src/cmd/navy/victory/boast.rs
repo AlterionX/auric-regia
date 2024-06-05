@@ -14,6 +14,6 @@ impl Request {
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
         let display_victories = db::NavalVictoryCount::load_for(&ctx.db_cfg, self.0).map(|n| n.victory_fourths.to_i64().unwrap_or(0) as f64 / 4.).unwrap_or(0.);
-        ctx.reply(format!("@here {} has earned {display_victories} victories!", self.0.mention())).await
+        ctx.reply_restricted(format!("@here {} has earned {display_victories} victories!", self.0.mention())).await
     }
 }
