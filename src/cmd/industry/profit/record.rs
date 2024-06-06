@@ -16,27 +16,27 @@ impl Request {
         let mut user_id = cmd.user.id;
         for opt in options {
             match opt.name {
-                "aUEC" => {
+                "auec" => {
                     let ResolvedValue::Integer(k) = opt.value else {
-                        trc::error!("Bad value for `aUEC` in `industry profits record` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `profits` in `industry profits record`.".into()));
+                        trc::error!("Bad value for `auec` in `industry profit record` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `auec` in `industry profit record`.".into()));
                     };
                     if k < 0 {
-                        trc::error!("Bad value for `aUEC` in `industry profits record` {:?}", opt);
-                        return Err(RequestError::User("Negative value for `profits` in `industry profits record`. Were you looking for `industry profits delete`?".into()));
+                        trc::error!("Bad value for `auec` in `industry profit record` {:?}", opt);
+                        return Err(RequestError::User("Negative value for `auec` in `industry profit record`. Were you looking for `industry profit delete`?".into()));
                     }
                     auec = k as u64;
                 }
                 "user" => {
                     let ResolvedValue::User(u, _) = opt.value else {
-                        trc::error!("Bad value for `user` in `industry profits record` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `user` in `industry profits record`.".into()));
+                        trc::error!("Bad value for `user` in `industry profit record` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `user` in `industry profit record`.".into()));
                     };
                     user_id = u.id;
                 }
                 _ => {
-                    trc::error!("Unknown option `{}` for `industry profits record`", opt.name);
-                    return Err(RequestError::Internal("Unknown option in `industry profits record`".into()));
+                    trc::error!("Unknown option `{}` for `industry profit record`", opt.name);
+                    return Err(RequestError::Internal("Unknown option in `industry profit record`".into()));
                 }
             }
         }
@@ -56,12 +56,12 @@ impl Request {
         let final_auec = match db::IndustryProfitCount::adjust_count(&ctx.db_cfg, change) {
             Ok(v) => v,
             Err(e) => {
-                trc::error!("Failed to update count for industry profits record. err={e:?}");
+                trc::error!("Failed to update count for industry profit record. err={e:?}");
                 let _ = ctx.reply(format!("Something broke... please contact a mod")).await;
                 return Ok(());
             }
         };
 
-        ctx.reply(format!("Added {} profits to {} (total {final_auec}).", self.auec, Mention::User(self.user_id))).await
+        ctx.reply(format!("Recorded {} aUEC in profit for {} (total {final_auec}).", self.auec, Mention::User(self.user_id))).await
     }
 }

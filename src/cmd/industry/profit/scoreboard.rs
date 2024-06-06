@@ -32,8 +32,8 @@ impl<'a> Request<'a> {
             match opt.name {
                 "limit" => {
                     let ResolvedValue::Integer(lim) = opt.value else {
-                        trc::error!("Bad value for `limit` in `industry profits scoreboard` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `limit` in `industry profits scoreboard`.".into()));
+                        trc::error!("Bad value for `limit` in `industry profit scoreboard` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `limit` in `industry profit scoreboard`.".into()));
                     };
                     if lim > 10 {
                         trc::error!("Bad value for `limit` in `legion kill scoreboard` {:?}", opt);
@@ -43,28 +43,28 @@ impl<'a> Request<'a> {
                 },
                 "at" => {
                     let ResolvedValue::String(a) = opt.value else {
-                        trc::error!("Bad value for `at` in `industry profits scoreboard` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `at` in `industry profits scoreboard`".into()));
+                        trc::error!("Bad value for `at` in `industry profit scoreboard` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `at` in `industry profit scoreboard`".into()));
                     };
                     at_discrim = a;
                 },
                 "someone" => {
                     let ResolvedValue::User(u, _) = opt.value else {
-                        trc::error!("Bad value for `someone` in `industry profits scoreboard` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `someone` in `industry profits scoreboard`".into()));
+                        trc::error!("Bad value for `someone` in `industry profit scoreboard` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `someone` in `industry profit scoreboard`".into()));
                     };
                     someone = Some(u.id);
                 },
                 "rank" => {
                     let ResolvedValue::Integer(r) = opt.value else {
-                        trc::error!("Bad value for `rank` in `industry profits scoreboard` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `rank` in `industry profits scoreboard`".into()));
+                        trc::error!("Bad value for `rank` in `industry profit scoreboard` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `rank` in `industry profit scoreboard`".into()));
                     };
                     rank = Some(r);
                 },
                 _ => {
-                    trc::error!("Unknown option in `industry profits scoreboard` {:?}", opt);
-                    return Err(RequestError::Internal("Unknown value for `rank` in `industry profits scoreboard`".into()));
+                    trc::error!("Unknown option in `industry profit scoreboard` {:?}", opt);
+                    return Err(RequestError::Internal("Unknown value for `rank` in `industry profit scoreboard`".into()));
                 }
             }
         }
@@ -100,7 +100,7 @@ impl<'a> Request<'a> {
                 Locator::Rank(r)
             },
             _ => {
-                return Err(RequestError::Internal("Unknown value for `at` in `industry profits scoreboard`.".into()));
+                return Err(RequestError::Internal("Unknown value for `at` in `industry profit scoreboard`.".into()));
             },
         };
 

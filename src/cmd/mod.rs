@@ -187,7 +187,7 @@ impl RequestKind {
             RequestKind::IndustryProfitRecord => {
                 vec![
                     RawCommandOptionEntry::Integer {
-                        name: "aUEC",
+                        name: "auec",
                         description: "Number of alpha UEC. Defaults to 1000.",
                     },
                     RawCommandOptionEntry::User {
@@ -199,7 +199,7 @@ impl RequestKind {
             RequestKind::IndustryProfitDelete => {
                 vec![
                     RawCommandOptionEntry::Integer {
-                        name: "aUEC",
+                        name: "auec",
                         description: "Number of alpha UEC.",
                     },
                     RawCommandOptionEntry::User {
@@ -644,6 +644,12 @@ pub enum RequestArgs<'a> {
 
     IndustryMiningRockRecord,
 
+    IndustryProfitRecord(industry::profit::record::Request),
+    IndustryProfitDelete(industry::profit::delete::Request),
+    IndustryProfitBoast(industry::profit::boast::Request),
+    IndustryProfitCheck(industry::profit::check::Request),
+    IndustryProfitScoreboard(industry::profit::scoreboard::Request<'a>),
+
     NavyVictoryRecord(navy::victory::record::Request),
     NavyVictoryDelete(navy::victory::delete::Request),
     NavyVictoryBoast(navy::victory::boast::Request),
@@ -669,6 +675,38 @@ impl <'a> RequestArgs<'a> {
                     return Err(RequestError::Internal("Missing options for `industry`.".into()));
                 };
                 match tier1.name {
+                    "profit" => {
+                        let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
+                            return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
+                        };
+                        let Some(tier2) = tier1_options.get(0) else {
+                            return Err(RequestError::Internal("Missing options for `industry profit`.".into()));
+                        };
+                        let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
+                            return Err(RequestError::Internal("Missing subcommand for `industry profit`.".into()));
+                        };
+                        match tier2.name {
+                            "record" => {
+                                return Ok(RequestArgs::IndustryProfitRecord(industry::profit::record::Request::parse(cmd, tier2_options.as_slice())?));
+                            },
+                            "delete" => {
+                                return Ok(RequestArgs::IndustryProfitDelete(industry::profit::delete::Request::parse(cmd, tier2_options.as_slice())?));
+                            },
+                            "boast" => {
+                                Ok(RequestArgs::IndustryProfitBoast(industry::profit::boast::Request::parse(cmd, &[])?))
+                            },
+                            "check" => {
+                                Ok(RequestArgs::IndustryProfitCheck(industry::profit::check::Request::parse(cmd, tier2_options.as_slice())?))
+                            },
+                            "scoreboard" => {
+                                Ok(RequestArgs::IndustryProfitScoreboard(industry::profit::scoreboard::Request::parse(cmd, tier2_options.as_slice())?))
+                            },
+                            _ => {
+                                trc::warn!("Unknown subcommand {:?}", tier1);
+                                return Err(RequestError::Internal("Unknown subcommand for `industry profit`".into()));
+                            },
+                        }
+                    },
                     "mining" => {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
                             return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
@@ -836,6 +874,22 @@ impl <'a> Request<'a> {
 
             RequestArgs::IndustryMiningRockRecord => {
                 ctx.reply("Industry mining number crunching not yet implemented.".to_owned()).await
+            },
+
+            RequestArgs::IndustryProfitRecord(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::IndustryProfitDelete(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::IndustryProfitBoast(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::IndustryProfitCheck(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::IndustryProfitScoreboard(req) => {
+                req.execute(ctx).await
             },
 
             RequestArgs::NavyVictoryRecord(req) => {
