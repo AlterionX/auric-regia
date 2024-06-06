@@ -70,7 +70,7 @@ impl Request {
             victory_fourths: self.victory_fourths.into(),
         };
 
-        let _final_victories = match db::NavalVictoryCount::adjust_count(&ctx.db_cfg, change) {
+        let final_victories = match db::NavalVictoryCount::adjust_count(&ctx.db_cfg, change) {
             Ok(v) => v,
             Err(e) => {
                 trc::error!("Failed to update count for navy victory record. err={e:?}");
@@ -79,6 +79,6 @@ impl Request {
             }
         };
 
-        ctx.reply(format!("Added {victories_to_add} victories to {}.", Mention::User(self.user_id))).await
+        ctx.reply(format!("Added {victories_to_add} victories to {} (total {final_victories}).", Mention::User(self.user_id))).await
     }
 }

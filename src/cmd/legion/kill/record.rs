@@ -55,7 +55,7 @@ impl Request {
             kills: self.kills.into(),
         };
 
-        let _final_kills = match db::LegionKillCount::adjust_count(&ctx.db_cfg, change) {
+        let final_kills = match db::LegionKillCount::adjust_count(&ctx.db_cfg, change) {
             Ok(v) => v,
             Err(e) => {
                 trc::error!("Failed to update count for legion kill record. err={e:?}");
@@ -63,6 +63,6 @@ impl Request {
             }
         };
 
-        ctx.reply(format!("Added {kills_to_add} kill(s) to {}.", Mention::User(self.user_id))).await
+        ctx.reply(format!("Added {kills_to_add} kill(s) to {} (total {final_kills}).", Mention::User(self.user_id))).await
     }
 }

@@ -196,16 +196,11 @@ impl<'a> Request<'a> {
         let mut buffer = "**Scoreboard:**\n".to_owned();
         for (offset, record) in ordering.into_iter().enumerate() {
             buffer.push_str(format!(
-                "\t{}) {}: {}",
+                "\t{}) {}: {} aUEC in profits\n",
                 start + offset as i64,
                 Mention::User(UserId::from(record.id.to_u64().unwrap())),
                 record.alpha_united_earth_credits
             ).as_str());
-            if record.alpha_united_earth_credits != 1.into() {
-                buffer.push_str(" victories\n");
-            } else {
-                buffer.push_str(" victory\n");
-            }
         }
 
         let _ = ctx.reply_restricted(buffer).await;

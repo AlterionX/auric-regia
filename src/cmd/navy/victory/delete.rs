@@ -58,12 +58,12 @@ impl Request {
             victory_fourths: BigDecimal::from(self.victory_fourths).neg(),
         };
 
-        let Ok(_final_victories) = db::NavalVictoryCount::adjust_count(&ctx.db_cfg, change) else {
+        let Ok(final_victories) = db::NavalVictoryCount::adjust_count(&ctx.db_cfg, change) else {
             trc::error!("Failed to update count for navy victory delete.");
             let _ = ctx.reply(format!("Something broke... please contact a mod")).await;
             return Ok(());
         };
 
-        ctx.reply(format!("Removed {victories_to_remove} victories from {}.", Mention::User(self.user_id))).await
+        ctx.reply(format!("Removed {victories_to_remove} victories from {} (total {final_victories}).", Mention::User(self.user_id))).await
     }
 }

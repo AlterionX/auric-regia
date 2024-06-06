@@ -57,7 +57,7 @@ impl Request {
             kills: BigDecimal::from(self.kills).neg(),
         };
 
-        let _final_kills = match db::LegionKillCount::adjust_count(&ctx.db_cfg, change) {
+        let final_kills = match db::LegionKillCount::adjust_count(&ctx.db_cfg, change) {
             Ok(v) => v,
             Err(e) => {
                 trc::error!("Failed to update count for legion kill delete. err={e:?}");
@@ -65,6 +65,6 @@ impl Request {
             }
         };
 
-        ctx.reply(format!("Removed {kills_to_remove} kill(s) from {}.", Mention::User(self.user_id))).await
+        ctx.reply(format!("Removed {kills_to_remove} kill(s) from {} (total {final_kills}).", Mention::User(self.user_id))).await
     }
 }

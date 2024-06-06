@@ -12,7 +12,7 @@ pub struct Request {
 
 impl Request {
     pub fn parse(cmd: &CommandInteraction, options: &[ResolvedOption]) -> Result<Self, RequestError> {
-        let mut auec = 1;
+        let mut auec = 1000;
         let mut user_id = cmd.user.id;
         for opt in options {
             match opt.name {
