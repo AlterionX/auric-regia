@@ -1,9 +1,11 @@
 mod navy;
 mod legion;
+mod industry;
 
 use diesel::{Connection, PgConnection};
 pub use navy::*;
 pub use legion::*;
+pub use industry::*;
 
 pub trait Connector {
     fn connect(&self) -> PgConnection;

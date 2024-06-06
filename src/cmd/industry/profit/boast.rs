@@ -1,4 +1,3 @@
-use bigdecimal::ToPrimitive;
 use serenity::all::{CommandInteraction, Mentionable, ResolvedOption, UserId};
 // use tracing as trc;
 
@@ -13,7 +12,7 @@ impl Request {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
-        let display_kills = db::LegionKillCount::load_for(&ctx.db_cfg, self.0).map(|n| n.kills.to_i64().unwrap_or(0)).unwrap_or(0);
-        ctx.reply_restricted(format!("@here {} has {display_kills} confirmed kills!", self.0.mention())).await
+        let profit = db::IndustryProfitCount::load_for(&ctx.db_cfg, self.0).map(|record| record.alpha_united_earth_credits).unwrap_or(0.into());
+        ctx.reply_restricted(format!("@here {} has earned {profit} aUEC!", self.0.mention())).await
     }
 }

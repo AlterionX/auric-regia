@@ -1,5 +1,6 @@
 pub mod navy;
 pub mod legion;
+pub mod industry;
 
 use std::borrow::Cow;
 use tracing as trc;
@@ -30,6 +31,12 @@ pub enum RequestKind {
     LegionKillBoast,
     LegionKillCheck,
     LegionKillScoreboard,
+
+    IndustryProfitRecord,
+    IndustryProfitDelete,
+    IndustryProfitBoast,
+    IndustryProfitCheck,
+    IndustryProfitScoreboard,
 }
 
 impl RequestKind {
@@ -41,6 +48,22 @@ impl RequestKind {
 
             RequestKind::IndustryMiningRockRecord => {
                 "record"
+            },
+
+            RequestKind::IndustryProfitRecord => {
+                "record"
+            },
+            RequestKind::IndustryProfitDelete => {
+                "delete"
+            },
+            RequestKind::IndustryProfitBoast => {
+                "boast"
+            },
+            RequestKind::IndustryProfitCheck => {
+                "check"
+            },
+            RequestKind::IndustryProfitScoreboard => {
+                "scoreboard"
             },
 
             RequestKind::NavyVictoryRecordOneUser => {
@@ -94,6 +117,22 @@ impl RequestKind {
                 "Records rocks"
             },
 
+            RequestKind::IndustryProfitRecord => {
+                "Record profits"
+            },
+            RequestKind::IndustryProfitDelete => {
+                "Delete profits"
+            },
+            RequestKind::IndustryProfitBoast => {
+                "Boast about your profits"
+            },
+            RequestKind::IndustryProfitCheck => {
+                "Checks someone's (or your own) profits"
+            },
+            RequestKind::IndustryProfitScoreboard => {
+                "Creates the scoreboard of profits across Auric."
+            },
+
             RequestKind::NavyVictoryRecordOneUser => {
                 "Record one victory for this user."
             },
@@ -143,6 +182,69 @@ impl RequestKind {
 
             RequestKind::IndustryMiningRockRecord => {
                 vec![]
+            },
+
+            RequestKind::IndustryProfitRecord => {
+                vec![
+                    RawCommandOptionEntry::Integer {
+                        name: "aUEC",
+                        description: "Number of alpha UEC. Defaults to 1000.",
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being recorded for. Leaving this out means that you're recording your own profits."
+                    },
+                ]
+            },
+            RequestKind::IndustryProfitDelete => {
+                vec![
+                    RawCommandOptionEntry::Integer {
+                        name: "aUEC",
+                        description: "Number of alpha UEC.",
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being recorded for. Leaving this out means that you're recording your own profits.",
+                    },
+                ]
+            },
+            RequestKind::IndustryProfitBoast => {
+                vec![]
+            },
+            RequestKind::IndustryProfitCheck => {
+                vec![
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person to get victories for. Defaults to self. Quieter than boasting.",
+                    },
+                ]
+            },
+            RequestKind::IndustryProfitScoreboard => {
+                vec![
+                    RawCommandOptionEntry::Integer {
+                        name: "limit",
+                        description: "Maximum entries to return. Max of 20. Defaults to 10.",
+                    },
+                    RawCommandOptionEntry::StringSelect {
+                        name: "at",
+                        description: "What to orient the scoreboard on.",
+                        choices: vec![
+                            ("Me", "me"),
+                            ("Bottom", "bottom"),
+                            ("Top (default)", "top"),
+                            ("Someone", "someone"),
+                            ("Rank", "rank"),
+                        ],
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "someone",
+                        description: "Should only be provided if \"at\" is set to \"someone\"."
+                    },
+                    RawCommandOptionEntry::Integer {
+                        name: "rank",
+                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\""
+                    },
+                ]
             },
 
             RequestKind::NavyVictoryRecordOneUser => {
@@ -374,23 +476,28 @@ pub enum CommandTreeTop {
         name: &'static str,
         description: &'static str,
         kind: CommandType,
-        children: Vec<CommandTreeIntermediate>
+        children: Vec<CommandTreeIntermediate>,
+        opt_default_perm: Option<Permissions>,
     },
     Primary {
         name: &'static str,
         description: &'static str,
         kind: CommandType,
-        children: Vec<RequestKind>
+        children: Vec<RequestKind>,
+        opt_default_perm: Option<Permissions>,
     },
-    NakedChatInput(RequestKind),
-    NakedUser(RequestKind),
+    NakedChatInput(RequestKind, Option<Permissions>),
+    NakedUser(RequestKind, Option<Permissions>),
 }
 
 impl CommandTreeTop {
     pub fn into_discord_command(self) -> CreateCommand {
         match self {
-            Self::Secondary { name, description, kind, children } => {
-                let mut top_level = CreateCommand::new(name).description(description).kind(kind).default_member_permissions(Permissions::READ_MESSAGE_HISTORY);
+            Self::Secondary { name, description, kind, children, opt_default_perm } => {
+                let mut top_level = CreateCommand::new(name).description(description).kind(kind);
+                if let Some(perm) = opt_default_perm {
+                    top_level = top_level.default_member_permissions(perm);
+                }
 
                 let subcommand_groups: Vec<_> = children.into_iter().map(|cti| {
                     let mut subcommand_group = CreateCommandOption::new(CommandOptionType::SubCommandGroup, cti.name, cti.description);
@@ -411,8 +518,11 @@ impl CommandTreeTop {
 
                 top_level
             },
-            Self::Primary { name, description, kind, children } => {
+            Self::Primary { name, description, kind, children, opt_default_perm } => {
                 let mut builder = CreateCommand::new(name).description(description).kind(kind);
+                if let Some(perm) = opt_default_perm {
+                    builder = builder.default_member_permissions(perm);
+                }
                 for child in children {
                     let mut subcommand = CreateCommandOption::new(CommandOptionType::SubCommand, child.name(), child.description());
                     let options = child.options();
@@ -424,8 +534,11 @@ impl CommandTreeTop {
 
                 builder
             },
-            Self::NakedChatInput(cmd) => {
+            Self::NakedChatInput(cmd, opt_default_perm) => {
                 let mut builder = CreateCommand::new(cmd.name()).description(cmd.description()).kind(CommandType::ChatInput);
+                if let Some(perm) = opt_default_perm {
+                    builder = builder.default_member_permissions(perm);
+                }
                 let options = cmd.options();
                 if !options.is_empty() {
                     builder = builder.set_options(options.into_iter().map(|rcoe| {
@@ -434,8 +547,11 @@ impl CommandTreeTop {
                 }
                 builder
             },
-            Self::NakedUser(cmd) => {
+            Self::NakedUser(cmd, opt_default_perm) => {
                 let mut builder = CreateCommand::new(cmd.name()).kind(CommandType::User);
+                if let Some(perm) = opt_default_perm {
+                    builder = builder.default_member_permissions(perm);
+                }
                 let options = cmd.options();
                 if !options.is_empty() {
                     builder = builder.set_options(options.into_iter().map(|rcoe| {
@@ -451,11 +567,12 @@ impl CommandTreeTop {
 #[tracing::instrument(name = "hello")]
 pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
     vec![
-        CommandTreeTop::NakedChatInput(RequestKind::Ping),
+        CommandTreeTop::NakedChatInput(RequestKind::Ping, None),
         CommandTreeTop::Secondary {
             name: "industry",
             description: "Industry commands",
             kind: CommandType::ChatInput,
+            opt_default_perm: None,
             children: vec![
                 CommandTreeIntermediate {
                     name: "mining",
@@ -464,15 +581,27 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
                         RequestKind::IndustryMiningRockRecord,
                     ],
                 },
+                CommandTreeIntermediate {
+                    name: "profit",
+                    description: "Commands for managing profit records",
+                    children: vec![
+                        RequestKind::IndustryProfitRecord,
+                        RequestKind::IndustryProfitDelete,
+                        RequestKind::IndustryProfitBoast,
+                        RequestKind::IndustryProfitCheck,
+                        RequestKind::IndustryProfitScoreboard,
+                    ],
+                },
             ],
         },
 
-        CommandTreeTop::NakedUser(RequestKind::NavyVictoryRecordOneUser),
-        CommandTreeTop::NakedUser(RequestKind::NavyVictoryCheckUser),
+        CommandTreeTop::NakedUser(RequestKind::NavyVictoryRecordOneUser, None),
+        CommandTreeTop::NakedUser(RequestKind::NavyVictoryCheckUser, None),
         CommandTreeTop::Secondary {
             name: "navy",
             description: "Navy commands",
             kind: CommandType::ChatInput,
+            opt_default_perm: None,
             children: vec![
                 CommandTreeIntermediate {
                     name: "victory",
@@ -491,6 +620,7 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
             name: "legion",
             description: "Legion commands",
             kind: CommandType::ChatInput,
+            opt_default_perm: None,
             children: vec![
                 CommandTreeIntermediate {
                     name: "kill",
@@ -772,7 +902,7 @@ mod test {
                     set.insert(*c);
                 }
             },
-            CommandTreeTop::NakedUser(ref cmd) | CommandTreeTop::NakedChatInput(ref cmd) => {
+            CommandTreeTop::NakedUser(ref cmd, _) | CommandTreeTop::NakedChatInput(ref cmd, _) => {
                 assert!(!set.contains(cmd));
                 set.insert(*cmd);
             },
