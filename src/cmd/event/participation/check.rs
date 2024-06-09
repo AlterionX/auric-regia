@@ -1,5 +1,5 @@
-use serenity::all::{CommandInteraction, Mentionable, ResolvedOption, UserId};
-// use tracing as trc;
+use serenity::all::{CommandInteraction, Mentionable, ResolvedOption, ResolvedValue, UserId};
+use tracing as trc;
 
 use crate::{cmd::RequestError, db, discord::ExecutionContext};
 
@@ -7,8 +7,25 @@ use crate::{cmd::RequestError, db, discord::ExecutionContext};
 pub struct Request(UserId);
 
 impl Request {
-    pub fn parse(cmd: &CommandInteraction, _options: &[ResolvedOption]) -> Result<Self, RequestError> {
-        Ok(Self(cmd.user.id))
+    pub fn parse(cmd: &CommandInteraction, options: &[ResolvedOption]) -> Result<Self, RequestError> {
+        let mut user_id = cmd.user.id;
+        for opt in options {
+            match opt.name {
+                "user" => {
+                    let ResolvedValue::User(u, _) = opt.value else {
+                        trc::error!("Bad value for `user` in `event participation check` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `user` in `event participation check`.".into()));
+                    };
+                    user_id = u.id;
+                }
+                _ => {
+                    trc::error!("Unknown option `{}` for `event participation check`", opt.name);
+                    return Err(RequestError::Internal("Unknown option in `event participation check`".into()));
+                }
+            }
+        }
+
+        Ok(Self(user_id))
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
@@ -16,4 +33,3 @@ impl Request {
         ctx.reply_restricted(format!("We have {count} events recorded for {}.", self.0.mention())).await
     }
 }
-
