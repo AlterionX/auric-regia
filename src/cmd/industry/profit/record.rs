@@ -1,6 +1,6 @@
 use tracing as trc;
 
-use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedTarget, ResolvedValue, UserId};
+use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedValue, UserId};
 
 use crate::{cmd::RequestError, db, discord::ExecutionContext};
 

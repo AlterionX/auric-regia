@@ -1,0 +1,1 @@
+DROP TABLE event_participation_count_changes, event_participation_counts;

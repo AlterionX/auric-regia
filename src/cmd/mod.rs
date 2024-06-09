@@ -1,6 +1,7 @@
 pub mod navy;
 pub mod legion;
 pub mod industry;
+pub mod event;
 
 use std::borrow::Cow;
 use tracing as trc;
@@ -14,7 +15,17 @@ use crate::discord::ExecutionContext;
 pub enum RequestKind {
     Ping,
 
+    EventParticipantRecord,
+    EventParticipantRemove,
+    EventParticipantCheck,
+
     IndustryMiningRockRecord,
+
+    IndustryProfitRecord,
+    IndustryProfitDelete,
+    IndustryProfitBoast,
+    IndustryProfitCheck,
+    IndustryProfitScoreboard,
 
     // User
     NavyVictoryRecordOneUser,
@@ -31,12 +42,6 @@ pub enum RequestKind {
     LegionKillBoast,
     LegionKillCheck,
     LegionKillScoreboard,
-
-    IndustryProfitRecord,
-    IndustryProfitDelete,
-    IndustryProfitBoast,
-    IndustryProfitCheck,
-    IndustryProfitScoreboard,
 }
 
 impl RequestKind {
@@ -44,6 +49,16 @@ impl RequestKind {
         match self {
             RequestKind::Ping => {
                 "ping"
+            },
+
+            RequestKind::EventParticipantRecord => {
+                "record"
+            },
+            RequestKind::EventParticipantRemove => {
+                "remove"
+            },
+            RequestKind::EventParticipantCheck => {
+                "check"
             },
 
             RequestKind::IndustryMiningRockRecord => {
@@ -113,6 +128,16 @@ impl RequestKind {
                 "Ping!"
             },
 
+            RequestKind::EventParticipantRecord => {
+                "Record a participant for an event"
+            },
+            RequestKind::EventParticipantRemove => {
+                "Remove a participant from an event"
+            },
+            RequestKind::EventParticipantCheck => {
+                "Check how many events a participant has been part of"
+            },
+
             RequestKind::IndustryMiningRockRecord => {
                 "Records rocks"
             },
@@ -180,6 +205,54 @@ impl RequestKind {
                 vec![]
             },
 
+            RequestKind::EventParticipantRecord => {
+                vec![
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being recorded for. Leaving this out means that you're recording your own participation.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::Integer {
+                        name: "count",
+                        description: "Number of events being recorded, defaults to 1",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::String {
+                        name: "note",
+                        description: "Notes. This is not accessible via commands.",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::EventParticipantRemove => {
+                vec![
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being recorded for. Leaving this out means that you're recording your own participation.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::Integer {
+                        name: "count",
+                        description: "Number of events being recorded, defaults to 1",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::String {
+                        name: "note",
+                        description: "notes",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::EventParticipantCheck => {
+                vec![
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being checked. Leaving this out means that you're checking your own participation.",
+                        required: false,
+                    },
+                ]
+            },
+
             RequestKind::IndustryMiningRockRecord => {
                 vec![]
             },
@@ -189,10 +262,12 @@ impl RequestKind {
                     RawCommandOptionEntry::Integer {
                         name: "auec",
                         description: "Number of alpha UEC. Defaults to 1000.",
+                        required: false,
                     },
                     RawCommandOptionEntry::User {
                         name: "user",
-                        description: "Person being recorded for. Leaving this out means that you're recording your own profits."
+                        description: "Person being recorded for. Leaving this out means that you're recording your own profits.",
+                        required: false,
                     },
                 ]
             },
@@ -201,10 +276,12 @@ impl RequestKind {
                     RawCommandOptionEntry::Integer {
                         name: "auec",
                         description: "Number of alpha UEC.",
+                        required: false,
                     },
                     RawCommandOptionEntry::User {
                         name: "user",
                         description: "Person being recorded for. Leaving this out means that you're recording your own profits.",
+                        required: false,
                     },
                 ]
             },
@@ -216,6 +293,7 @@ impl RequestKind {
                     RawCommandOptionEntry::User {
                         name: "user",
                         description: "Person to get victories for. Defaults to self. Quieter than boasting.",
+                        required: false,
                     },
                 ]
             },
@@ -224,10 +302,12 @@ impl RequestKind {
                     RawCommandOptionEntry::Integer {
                         name: "limit",
                         description: "Maximum entries to return. Max of 20. Defaults to 10.",
+                        required: false,
                     },
                     RawCommandOptionEntry::StringSelect {
                         name: "at",
                         description: "What to orient the scoreboard on.",
+                        required: false,
                         choices: vec![
                             ("Me", "me"),
                             ("Bottom", "bottom"),
@@ -238,11 +318,13 @@ impl RequestKind {
                     },
                     RawCommandOptionEntry::User {
                         name: "someone",
-                        description: "Should only be provided if \"at\" is set to \"someone\"."
+                        description: "Should only be provided if \"at\" is set to \"someone\".",
+                        required: false,
                     },
                     RawCommandOptionEntry::Integer {
                         name: "rank",
-                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\""
+                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\"",
+                        required: false,
                     },
                 ]
             },
@@ -259,10 +341,12 @@ impl RequestKind {
                     RawCommandOptionEntry::Number {
                         name: "victories",
                         description: "Number of victories. Only accepts values in intervals of 0.25. Defaults to 1.",
+                        required: false,
                     },
                     RawCommandOptionEntry::User {
                         name: "user",
-                        description: "Person being recorded for. Leaving this out means that you're recording your own victories."
+                        description: "Person being recorded for. Leaving this out means that you're recording your own victories.",
+                        required: false,
                     },
                 ]
             },
@@ -271,10 +355,12 @@ impl RequestKind {
                     RawCommandOptionEntry::Number {
                         name: "victories",
                         description: "Number of victories. Only accepts values in intervals of 0.25. Defaults to 1.",
+                        required: false,
                     },
                     RawCommandOptionEntry::User {
                         name: "user",
                         description: "Person being recorded for. Leaving this out means that you're recording your own victories.",
+                        required: false,
                     },
                 ]
             },
@@ -286,6 +372,7 @@ impl RequestKind {
                     RawCommandOptionEntry::User {
                         name: "user",
                         description: "Person to get victories for. Defaults to self. Quieter than boasting.",
+                        required: false,
                     },
                 ]
             },
@@ -294,10 +381,12 @@ impl RequestKind {
                     RawCommandOptionEntry::Integer {
                         name: "limit",
                         description: "Maximum entries to return. Max of 20. Defaults to 10.",
+                        required: false,
                     },
                     RawCommandOptionEntry::StringSelect {
                         name: "at",
                         description: "What to orient the scoreboard on.",
+                        required: false,
                         choices: vec![
                             ("Me", "me"),
                             ("Bottom", "bottom"),
@@ -308,11 +397,13 @@ impl RequestKind {
                     },
                     RawCommandOptionEntry::User {
                         name: "someone",
-                        description: "Should only be provided if \"at\" is set to \"someone\"."
+                        description: "Should only be provided if \"at\" is set to \"someone\".",
+                        required: false,
                     },
                     RawCommandOptionEntry::Integer {
                         name: "rank",
-                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\""
+                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\"",
+                        required: false,
                     },
                 ]
             },
@@ -322,10 +413,12 @@ impl RequestKind {
                     RawCommandOptionEntry::Integer {
                         name: "kills",
                         description: "Number of kills. Only accepts values in intervals of 0.25. Defaults to 1.",
+                        required: false,
                     },
                     RawCommandOptionEntry::User {
                         name: "user",
-                        description: "Person being recorded for. Leaving this out means that you're recording your own kills."
+                        description: "Person being recorded for. Leaving this out means that you're recording your own kills.",
+                        required: false,
                     },
                 ]
             },
@@ -334,10 +427,12 @@ impl RequestKind {
                     RawCommandOptionEntry::Integer {
                         name: "kills",
                         description: "Number of kills. Only accepts values in intervals of 0.25. Defaults to 1.",
+                        required: false,
                     },
                     RawCommandOptionEntry::User {
                         name: "user",
                         description: "Person being recorded for. Leaving this out means that you're recording your own kills.",
+                        required: false,
                     },
                 ]
             },
@@ -349,6 +444,7 @@ impl RequestKind {
                     RawCommandOptionEntry::User {
                         name: "user",
                         description: "Person to get kills for. Defaults to self. Quieter than boasting.",
+                        required: false,
                     },
                 ]
             },
@@ -357,10 +453,12 @@ impl RequestKind {
                     RawCommandOptionEntry::Integer {
                         name: "limit",
                         description: "Maximum entries to return. Max of 20. Defaults to 10.",
+                        required: false,
                     },
                     RawCommandOptionEntry::StringSelect {
                         name: "at",
                         description: "What to orient the scoreboard on.",
+                        required: false,
                         choices: vec![
                             ("Me", "me"),
                             ("Bottom", "bottom"),
@@ -371,11 +469,13 @@ impl RequestKind {
                     },
                     RawCommandOptionEntry::User {
                         name: "someone",
-                        description: "Should only be provided if \"at\" is set to \"someone\"."
+                        description: "Should only be provided if \"at\" is set to \"someone\".",
+                        required: false,
                     },
                     RawCommandOptionEntry::Integer {
                         name: "rank",
-                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\""
+                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\"",
+                        required: false,
                     },
                 ]
             },
@@ -387,29 +487,35 @@ impl RequestKind {
 pub enum RawCommandOptionEntry {
     Integer {
         name: &'static str,
-        description: &'static str
+        description: &'static str,
+        required: bool,
     },
     Number {
         name: &'static str,
-        description: &'static str
+        description: &'static str,
+        required: bool,
     },
     Boolean {
         name: &'static str,
-        description: &'static str
+        description: &'static str,
+        required: bool,
     },
     String {
         name: &'static str,
-        description: &'static str
+        description: &'static str,
+        required: bool,
     },
     User {
         name: &'static str,
-        description: &'static str
+        description: &'static str,
+        required: bool,
     },
     StringSelect {
         name: &'static str,
         description: &'static str,
         // (name, value)
         choices: Vec<(&'static str, &'static str)>,
+        required: bool,
     },
 }
 
@@ -436,6 +542,17 @@ impl RawCommandOptionEntry {
         }
     }
 
+    fn required(&self) -> bool {
+        *match self {
+            Self::Integer { required, .. } => required,
+            Self::Number { required, .. } => required,
+            Self::Boolean { required, .. } => required,
+            Self::String { required, .. } => required,
+            Self::User { required, .. } => required,
+            Self::StringSelect { required, .. } => required,
+        }
+    }
+
     fn description(&self) -> &'static str {
         match self {
             Self::Integer { description, .. } => description,
@@ -449,6 +566,7 @@ impl RawCommandOptionEntry {
 
     fn to_option(&self) -> CreateCommandOption {
         let mut builder = CreateCommandOption::new(self.kind(), self.name(), self.description());
+        builder = builder.required(self.required());
         match self {
             Self::Integer { .. } => {},
             Self::Number { .. } => {},
@@ -472,18 +590,12 @@ pub struct CommandTreeIntermediate {
 }
 
 pub enum CommandTreeTop {
-    Secondary {
+    Complex {
         name: &'static str,
         description: &'static str,
         kind: CommandType,
-        children: Vec<CommandTreeIntermediate>,
-        opt_default_perm: Option<Permissions>,
-    },
-    Primary {
-        name: &'static str,
-        description: &'static str,
-        kind: CommandType,
-        children: Vec<RequestKind>,
+        subcommand_groups: Vec<CommandTreeIntermediate>,
+        subcommands: Vec<RequestKind>,
         opt_default_perm: Option<Permissions>,
     },
     NakedChatInput(RequestKind, Option<Permissions>),
@@ -493,13 +605,21 @@ pub enum CommandTreeTop {
 impl CommandTreeTop {
     pub fn into_discord_command(self) -> CreateCommand {
         match self {
-            Self::Secondary { name, description, kind, children, opt_default_perm } => {
+            Self::Complex { name, description, kind, subcommands, subcommand_groups, opt_default_perm } => {
                 let mut top_level = CreateCommand::new(name).description(description).kind(kind);
                 if let Some(perm) = opt_default_perm {
                     top_level = top_level.default_member_permissions(perm);
                 }
 
-                let subcommand_groups: Vec<_> = children.into_iter().map(|cti| {
+                let subcommand_iter = subcommands.into_iter().map(|rk| {
+                    let mut subcommand = CreateCommandOption::new(CommandOptionType::SubCommand, rk.name(), rk.description());
+                    let options = rk.options();
+                    for option in options {
+                        subcommand = subcommand.add_sub_option(option.to_option());
+                    }
+                    subcommand
+                });
+                let subcommand_group_iter = subcommand_groups.into_iter().map(|cti| {
                     let mut subcommand_group = CreateCommandOption::new(CommandOptionType::SubCommandGroup, cti.name, cti.description);
                     for child in cti.children {
                         let mut subcommand = CreateCommandOption::new(CommandOptionType::SubCommand, child.name(), child.description());
@@ -511,28 +631,14 @@ impl CommandTreeTop {
                     }
 
                     subcommand_group
-                }).collect();
-                if !subcommand_groups.is_empty() {
-                    top_level = top_level.set_options(subcommand_groups);
+                });
+
+                let child_members: Vec<_> = subcommand_iter.chain(subcommand_group_iter).collect();
+                if !child_members.is_empty() {
+                    top_level = top_level.set_options(child_members);
                 }
 
                 top_level
-            },
-            Self::Primary { name, description, kind, children, opt_default_perm } => {
-                let mut builder = CreateCommand::new(name).description(description).kind(kind);
-                if let Some(perm) = opt_default_perm {
-                    builder = builder.default_member_permissions(perm);
-                }
-                for child in children {
-                    let mut subcommand = CreateCommandOption::new(CommandOptionType::SubCommand, child.name(), child.description());
-                    let options = child.options();
-                    for option in options {
-                        subcommand = subcommand.add_sub_option(option.to_option());
-                    }
-                    builder = builder.add_option(subcommand);
-                }
-
-                builder
             },
             Self::NakedChatInput(cmd, opt_default_perm) => {
                 let mut builder = CreateCommand::new(cmd.name()).description(cmd.description()).kind(CommandType::ChatInput);
@@ -568,12 +674,31 @@ impl CommandTreeTop {
 pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
     vec![
         CommandTreeTop::NakedChatInput(RequestKind::Ping, None),
-        CommandTreeTop::Secondary {
+        CommandTreeTop::Complex {
+            name: "event",
+            description: "Event commands",
+            kind: CommandType::ChatInput,
+            opt_default_perm: None,
+            subcommands: vec![],
+            subcommand_groups: vec![
+                CommandTreeIntermediate {
+                    name: "participation",
+                    description: "Commands for tracking event participation",
+                    children: vec![
+                        RequestKind::EventParticipantRecord,
+                        RequestKind::EventParticipantRemove,
+                        RequestKind::EventParticipantCheck,
+                    ],
+                },
+            ],
+        },
+        CommandTreeTop::Complex {
             name: "industry",
             description: "Industry commands",
             kind: CommandType::ChatInput,
             opt_default_perm: None,
-            children: vec![
+            subcommands: vec![],
+            subcommand_groups: vec![
                 CommandTreeIntermediate {
                     name: "mining",
                     description: "Commands for mining data stashing",
@@ -597,12 +722,13 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
 
         CommandTreeTop::NakedUser(RequestKind::NavyVictoryRecordOneUser, None),
         CommandTreeTop::NakedUser(RequestKind::NavyVictoryCheckUser, None),
-        CommandTreeTop::Secondary {
+        CommandTreeTop::Complex {
             name: "navy",
             description: "Navy commands",
             kind: CommandType::ChatInput,
             opt_default_perm: None,
-            children: vec![
+            subcommands: vec![],
+            subcommand_groups: vec![
                 CommandTreeIntermediate {
                     name: "victory",
                     description: "Commands for managing victory counts",
@@ -616,12 +742,13 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
                 },
             ],
         },
-        CommandTreeTop::Secondary {
+        CommandTreeTop::Complex {
             name: "legion",
             description: "Legion commands",
             kind: CommandType::ChatInput,
             opt_default_perm: None,
-            children: vec![
+            subcommands: vec![],
+            subcommand_groups: vec![
                 CommandTreeIntermediate {
                     name: "kill",
                     description: "Commands for managing kill counts",
@@ -641,6 +768,10 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
 #[derive(Debug)]
 pub enum RequestArgs<'a> {
     Ping,
+
+    EventParticipantRecord(event::participation::record::Request<'a>),
+    EventParticipantRemove(event::participation::remove::Request<'a>),
+    EventParticipantCheck(event::participation::check::Request),
 
     IndustryMiningRockRecord,
 
@@ -669,9 +800,46 @@ impl <'a> RequestArgs<'a> {
             "ping" => {
                 Ok(RequestArgs::Ping)
             },
+            "event" => {
+                let tier0_options = cmd.data.options();
+                let Some(tier1) = tier0_options.first() else {
+                    return Err(RequestError::Internal("Missing options for `event`.".into()));
+                };
+                match tier1.name {
+                    "participation" => {
+                        let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
+                            return Err(RequestError::Internal("Missing subcommand group for `participation`.".into()));
+                        };
+                        let Some(tier2) = tier1_options.first() else {
+                            return Err(RequestError::Internal("Missing options for `event participation`.".into()));
+                        };
+                        let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
+                            return Err(RequestError::Internal("Missing subcommand for `event participation`.".into()));
+                        };
+                        match tier2.name {
+                            "record" => {
+                                Ok(RequestArgs::EventParticipantRecord(event::participation::record::Request::parse(cmd, tier2_options.as_slice())?))
+                            },
+                            "remove" => {
+                                Ok(RequestArgs::EventParticipantRemove(event::participation::remove::Request::parse(cmd, tier2_options.as_slice())?))
+                            },
+                            "check" => {
+                                Ok(RequestArgs::EventParticipantCheck(event::participation::check::Request::parse(cmd, tier2_options.as_slice())?))
+                            },
+                            _ => {
+                                trc::warn!("Unknown subcommand {:?}", tier1);
+                                Err(RequestError::Internal("Unknown subcommand for `event participation`".into()))
+                            },
+                        }
+                    },
+                    _ => {
+                        Err(RequestError::Internal("Bad subcommand for `event`.".into()))
+                    },
+                }
+            },
             "industry" => {
                 let tier0_options = cmd.data.options();
-                let Some(tier1) = tier0_options.get(0) else {
+                let Some(tier1) = tier0_options.first() else {
                     return Err(RequestError::Internal("Missing options for `industry`.".into()));
                 };
                 match tier1.name {
@@ -679,7 +847,7 @@ impl <'a> RequestArgs<'a> {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
                             return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
                         };
-                        let Some(tier2) = tier1_options.get(0) else {
+                        let Some(tier2) = tier1_options.first() else {
                             return Err(RequestError::Internal("Missing options for `industry profit`.".into()));
                         };
                         let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
@@ -687,10 +855,10 @@ impl <'a> RequestArgs<'a> {
                         };
                         match tier2.name {
                             "record" => {
-                                return Ok(RequestArgs::IndustryProfitRecord(industry::profit::record::Request::parse(cmd, tier2_options.as_slice())?));
+                                Ok(RequestArgs::IndustryProfitRecord(industry::profit::record::Request::parse(cmd, tier2_options.as_slice())?))
                             },
                             "delete" => {
-                                return Ok(RequestArgs::IndustryProfitDelete(industry::profit::delete::Request::parse(cmd, tier2_options.as_slice())?));
+                                Ok(RequestArgs::IndustryProfitDelete(industry::profit::delete::Request::parse(cmd, tier2_options.as_slice())?))
                             },
                             "boast" => {
                                 Ok(RequestArgs::IndustryProfitBoast(industry::profit::boast::Request::parse(cmd, &[])?))
@@ -703,7 +871,7 @@ impl <'a> RequestArgs<'a> {
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
-                                return Err(RequestError::Internal("Unknown subcommand for `industry profit`".into()));
+                                Err(RequestError::Internal("Unknown subcommand for `industry profit`".into()))
                             },
                         }
                     },
@@ -711,7 +879,7 @@ impl <'a> RequestArgs<'a> {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
                             return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
                         };
-                        let Some(tier2) = tier1_options.get(0) else {
+                        let Some(tier2) = tier1_options.first() else {
                             return Err(RequestError::Internal("Missing options for `industry mining`.".into()));
                         };
                         let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
@@ -726,19 +894,19 @@ impl <'a> RequestArgs<'a> {
                         Ok(RequestArgs::IndustryMiningRockRecord)
                     },
                     _ => {
-                        return Err(RequestError::Internal("Bad subcommand for `industry`.".into()));
+                        Err(RequestError::Internal("Bad subcommand for `industry`.".into()))
                     },
                 }
             },
             "Record One Naval Victory" => {
-                return Ok(RequestArgs::NavyVictoryRecord(navy::victory::record::Request::parse(cmd, &[])?));
+                Ok(RequestArgs::NavyVictoryRecord(navy::victory::record::Request::parse(cmd, &[])?))
             },
             "Check Naval Victories" => {
                 Ok(Self::NavyVictoryCheck(navy::victory::check::Request::parse(cmd, &[])?))
             },
             "navy" => {
                 let tier0_options: Vec<ResolvedOption<'a>> = cmd.data.options();
-                let Some(tier1) = tier0_options.get(0) else {
+                let Some(tier1) = tier0_options.first() else {
                     return Err(RequestError::Internal("Missing options for `navy`.".into()));
                 };
                 match tier1.name {
@@ -746,7 +914,7 @@ impl <'a> RequestArgs<'a> {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
                             return Err(RequestError::Internal("Missing subcommand group for `navy`".into()));
                         };
-                        let Some(tier2) = tier1_options.get(0) else {
+                        let Some(tier2) = tier1_options.first() else {
                             return Err(RequestError::Internal("Missing options for `navy victory`".into()));
                         };
                         let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
@@ -754,10 +922,10 @@ impl <'a> RequestArgs<'a> {
                         };
                         match tier2.name {
                             "record" => {
-                                return Ok(RequestArgs::NavyVictoryRecord(navy::victory::record::Request::parse(cmd, tier2_options.as_slice())?));
+                                Ok(RequestArgs::NavyVictoryRecord(navy::victory::record::Request::parse(cmd, tier2_options.as_slice())?))
                             },
                             "delete" => {
-                                return Ok(RequestArgs::NavyVictoryDelete(navy::victory::delete::Request::parse(cmd, tier2_options.as_slice())?));
+                                Ok(RequestArgs::NavyVictoryDelete(navy::victory::delete::Request::parse(cmd, tier2_options.as_slice())?))
                             },
                             "boast" => {
                                 Ok(RequestArgs::NavyVictoryBoast(navy::victory::boast::Request::parse(cmd, &[])?))
@@ -770,19 +938,19 @@ impl <'a> RequestArgs<'a> {
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
-                                return Err(RequestError::Internal("Unknown subcommand for `navy victory`".into()));
+                                Err(RequestError::Internal("Unknown subcommand for `navy victory`".into()))
                             },
                         }
                     },
                     _ => {
                         trc::warn!("Unknown subcommand {:?}", tier1);
-                        return Err(RequestError::Internal("Unknown subcommand for `navy`".into()));
+                        Err(RequestError::Internal("Unknown subcommand for `navy`".into()))
                     },
                 }
             },
             "legion" => {
                 let tier0_options: Vec<ResolvedOption<'a>> = cmd.data.options();
-                let Some(tier1) = tier0_options.get(0) else {
+                let Some(tier1) = tier0_options.first() else {
                     return Err(RequestError::Internal("Missing options for `legion`.".into()));
                 };
                 match tier1.name {
@@ -790,7 +958,7 @@ impl <'a> RequestArgs<'a> {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
                             return Err(RequestError::Internal("Missing subcommand group for `legion`".into()));
                         };
-                        let Some(tier2) = tier1_options.get(0) else {
+                        let Some(tier2) = tier1_options.first() else {
                             return Err(RequestError::Internal("Missing options for `legion kill`".into()));
                         };
                         let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
@@ -798,10 +966,10 @@ impl <'a> RequestArgs<'a> {
                         };
                         match tier2.name {
                             "record" => {
-                                return Ok(RequestArgs::LegionKillRecord(legion::kill::record::Request::parse(cmd, tier2_options.as_slice())?));
+                                Ok(RequestArgs::LegionKillRecord(legion::kill::record::Request::parse(cmd, tier2_options.as_slice())?))
                             },
                             "delete" => {
-                                return Ok(RequestArgs::LegionKillDelete(legion::kill::delete::Request::parse(cmd, tier2_options.as_slice())?));
+                                Ok(RequestArgs::LegionKillDelete(legion::kill::delete::Request::parse(cmd, tier2_options.as_slice())?))
                             },
                             "boast" => {
                                 Ok(RequestArgs::LegionKillBoast(legion::kill::boast::Request::parse(cmd, &[])?))
@@ -814,19 +982,19 @@ impl <'a> RequestArgs<'a> {
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
-                                return Err(RequestError::Internal("Unknown subcommand for `legion kill`".into()));
+                                Err(RequestError::Internal("Unknown subcommand for `legion kill`".into()))
                             },
                         }
                     },
                     _ => {
                         trc::warn!("Unknown subcommand {:?}", tier1);
-                        return Err(RequestError::Internal("Unknown subcommand for `legion`".into()));
+                        Err(RequestError::Internal("Unknown subcommand for `legion`".into()))
                     },
                 }
             },
             _ => {
                 trc::error!("Unknown command {:?} received", cmd);
-                return Err(RequestError::Internal("Unknown command.".into()));
+                Err(RequestError::Internal("Unknown command.".into()))
             },
         }
     }
@@ -870,6 +1038,16 @@ impl <'a> Request<'a> {
             RequestArgs::Ping => {
                 // Just try pong.
                 ctx.reply("Pong!".to_owned()).await
+            },
+
+            RequestArgs::EventParticipantRemove(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::EventParticipantRecord(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::EventParticipantCheck(req) => {
+                req.execute(ctx).await
             },
 
             RequestArgs::IndustryMiningRockRecord => {
@@ -934,24 +1112,12 @@ mod test {
 
     use strum::{EnumCount, IntoEnumIterator};
 
-    use super::{generate_command_descriptions, RequestKind, CommandTreeIntermediate, CommandTreeTop};
-
-    fn iter_tree_intermediate(inter: &CommandTreeIntermediate, set: &mut HashSet<RequestKind>) {
-        for c in inter.children.iter() {
-            assert!(!set.contains(c));
-            set.insert(*c);
-        }
-    }
+    use super::{generate_command_descriptions, RequestKind, CommandTreeTop};
 
     fn iter_tree(tree: &CommandTreeTop, set: &mut HashSet<RequestKind>) {
         match tree {
-            CommandTreeTop::Secondary { ref children, .. } => {
-                for c in children {
-                    iter_tree_intermediate(c, set);
-                }
-            },
-            CommandTreeTop::Primary { ref children, .. } => {
-                for c in children {
+            CommandTreeTop::Complex { ref subcommand_groups, ref subcommands, .. } => {
+                for c in subcommand_groups.iter().flat_map(|g| g.children.iter()).chain(subcommands.iter()) {
                     assert!(!set.contains(c));
                     set.insert(*c);
                 }

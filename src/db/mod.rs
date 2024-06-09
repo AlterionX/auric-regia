@@ -1,11 +1,13 @@
 mod navy;
 mod legion;
 mod industry;
+mod event;
 
 use diesel::{Connection, PgConnection};
 pub use navy::*;
 pub use legion::*;
 pub use industry::*;
+pub use event::*;
 
 pub trait Connector {
     fn connect(&self) -> PgConnection;

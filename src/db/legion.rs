@@ -27,7 +27,7 @@ pub struct LegionKillCount {
     pub kills: BigDecimal,
 }
 
-diesel::sql_function! {
+diesel::define_sql_function! {
     #[sql_name = "GREATEST"]
     fn max2(a: diesel::sql_types::Numeric, b: diesel::sql_types::Numeric) -> diesel::sql_types::Numeric;
 }
