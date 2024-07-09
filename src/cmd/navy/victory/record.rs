@@ -1,4 +1,5 @@
 use tracing as trc;
+use bigdecimal::ToPrimitive;
 
 use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedTarget, ResolvedValue, UserId};
 
@@ -71,7 +72,7 @@ impl Request {
         };
 
         let final_victories = match db::NavalVictoryCount::adjust_count(&ctx.db_cfg, change) {
-            Ok(v) => v,
+            Ok(v) => v.to_i64().unwrap_or(0) as f64 / 4.,
             Err(e) => {
                 trc::error!("Failed to update count for navy victory record. err={e:?}");
                 let _ = ctx.reply(format!("Something broke... please contact a mod")).await;

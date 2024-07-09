@@ -1,5 +1,5 @@
 use std::ops::Neg;
-use bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal, ToPrimitive};
 use tracing as trc;
 
 use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedValue, UserId};
@@ -58,11 +58,12 @@ impl Request {
             victory_fourths: BigDecimal::from(self.victory_fourths).neg(),
         };
 
-        let Ok(final_victories) = db::NavalVictoryCount::adjust_count(&ctx.db_cfg, change) else {
+        let Ok(new_victory_fourths) = db::NavalVictoryCount::adjust_count(&ctx.db_cfg, change) else {
             trc::error!("Failed to update count for navy victory delete.");
             let _ = ctx.reply(format!("Something broke... please contact a mod")).await;
             return Ok(());
         };
+        let final_victories = new_victory_fourths.to_i64().unwrap_or(0) as f64 / 4.;
 
         ctx.reply(format!("Removed {victories_to_remove} victories from {} (total {final_victories}).", Mention::User(self.user_id))).await
     }
