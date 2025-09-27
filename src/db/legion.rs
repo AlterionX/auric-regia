@@ -4,7 +4,7 @@ use bigdecimal::BigDecimal;
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use serenity::all::UserId;
-use crate::schema::{self, legion_kill_counts};
+use crate::schema;
 
 use super::Connector;
 
@@ -93,14 +93,14 @@ impl LegionKillCount {
                 schema::legion_kill_counts::updated.lt(usage)
                     .and(schema::legion_kill_counts::kills.gt(kills))
             )
-            .select(diesel::dsl::count(legion_kill_counts::id))
+            .select(diesel::dsl::count(schema::legion_kill_counts::id))
             .get_result::<i64>(&mut conn)
     }
 
     pub fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
         let mut conn = connection_maker.connect();
         schema::legion_kill_counts::table
-            .order((legion_kill_counts::kills.desc(), legion_kill_counts::updated))
+            .order((schema::legion_kill_counts::kills.desc(), schema::legion_kill_counts::updated))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
@@ -109,9 +109,30 @@ impl LegionKillCount {
     pub fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
         let mut conn = connection_maker.connect();
         schema::legion_kill_counts::table
-            .order((legion_kill_counts::kills, legion_kill_counts::updated.desc()))
+            .order((schema::legion_kill_counts::kills, schema::legion_kill_counts::updated.desc()))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
+    }
+
+    pub fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+        let mut conn = connection_maker.connect();
+        let data = diesel::delete(
+            schema::legion_kill_counts::table
+                .filter(schema::legion_kill_counts::id.eq_any(ids))
+        ).get_results::<Self>(&mut conn).map_err(AdjustmentError::Change)?;
+        let deleted_record_count = data.len();
+
+        // write changes back to db
+        diesel::insert_into(schema::legion_kill_count_changes::table)
+            .values(data.into_iter().map(|LegionKillCount { id, kills, .. }| NewLegionKillCountChange {
+                updater: u64::from(deleter).into(),
+                target: id,
+                kills,
+            }).collect::<Vec<_>>())
+            .execute(&mut conn)
+            .map_err(AdjustmentError::Count)?;
+
+        Ok(deleted_record_count)
     }
 }

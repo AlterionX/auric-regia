@@ -4,7 +4,7 @@ use bigdecimal::BigDecimal;
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use serenity::all::UserId;
-use crate::schema::{self, industry_profit_counts};
+use crate::schema;
 
 use super::Connector;
 
@@ -87,14 +87,14 @@ impl IndustryProfitCount {
                 schema::industry_profit_counts::updated.lt(usage)
                     .and(schema::industry_profit_counts::alpha_united_earth_credits.gt(alpha_united_earth_credits))
             )
-            .select(diesel::dsl::count(industry_profit_counts::id))
+            .select(diesel::dsl::count(schema::industry_profit_counts::id))
             .get_result::<i64>(&mut conn)
     }
 
     pub fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
         let mut conn = connection_maker.connect();
         schema::industry_profit_counts::table
-            .order((industry_profit_counts::alpha_united_earth_credits.desc(), industry_profit_counts::updated))
+            .order((schema::industry_profit_counts::alpha_united_earth_credits.desc(), schema::industry_profit_counts::updated))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
@@ -103,10 +103,31 @@ impl IndustryProfitCount {
     pub fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
         let mut conn = connection_maker.connect();
         schema::industry_profit_counts::table
-            .order((industry_profit_counts::alpha_united_earth_credits, industry_profit_counts::updated.desc()))
+            .order((schema::industry_profit_counts::alpha_united_earth_credits, schema::industry_profit_counts::updated.desc()))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
+    }
+
+    pub fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+        let mut conn = connection_maker.connect();
+        let data = diesel::delete(
+            schema::industry_profit_counts::table
+                .filter(schema::industry_profit_counts::id.eq_any(ids))
+        ).get_results::<Self>(&mut conn).map_err(AdjustmentError::Change)?;
+        let deleted_record_count = data.len();
+
+        // write changes back to db
+        diesel::insert_into(schema::industry_profit_count_changes::table)
+            .values(data.into_iter().map(|IndustryProfitCount { id, alpha_united_earth_credits, .. }| NewIndustryProfitCountChange {
+                updater: u64::from(deleter).into(),
+                target: id,
+                alpha_united_earth_credits,
+            }).collect::<Vec<_>>())
+            .execute(&mut conn)
+            .map_err(AdjustmentError::Count)?;
+
+        Ok(deleted_record_count)
     }
 }
 
