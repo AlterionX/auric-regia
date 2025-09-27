@@ -35,9 +35,9 @@ impl<'a> Request<'a> {
                         trc::error!("Bad value for `limit` in `navy victory scoreboard` {:?}", opt);
                         return Err(RequestError::Internal("Bad value for `limit` in `navy victory scoreboard`.".into()));
                     };
-                    if lim > 30 {
+                    if lim > 50 {
                         trc::error!("Bad value for `limit` in `legion kill scoreboard` {:?}", opt);
-                        return Err(RequestError::User("You can only show 30 users per command.".into()));
+                        return Err(RequestError::User("You can only show 50 users per command.".into()));
                     }
                     limit = lim;
                 },
