@@ -35,7 +35,7 @@ impl<'a> Request<'a> {
                         trc::error!("Bad value for `limit` in `navy victory scoreboard` {:?}", opt);
                         return Err(RequestError::Internal("Bad value for `limit` in `navy victory scoreboard`.".into()));
                     };
-                    if lim > 10 {
+                    if lim > 30 {
                         trc::error!("Bad value for `limit` in `legion kill scoreboard` {:?}", opt);
                         return Err(RequestError::User("You can only show 30 users per command.".into()));
                     }
@@ -68,13 +68,13 @@ impl<'a> Request<'a> {
                 }
             }
         }
-        if rank.is_some() && at_discrim != "rank"{
-            // Better error handling.
-            return Err(RequestError::User("`rank` provided without providing `rank` for `at`".into()));
+        if rank.is_some() && at_discrim != "rank" {
+            // Overrides `at_discrim` for convenience
+            at_discrim = "rank";
         }
-        if someone.is_some() && at_discrim != "someone"{
-            // Better error handling.
-            return Err(RequestError::User("`someone` provided without providing `someone` for `at`".into()));
+        if someone.is_some() && at_discrim != "someone" {
+            // Overrides `at_discrim` for convenience
+            at_discrim = "someone";
         }
 
         let at = match at_discrim {

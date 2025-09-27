@@ -69,12 +69,12 @@ impl<'a> Request<'a> {
             }
         }
         if rank.is_some() && at_discrim != "rank"{
-            // Better error handling.
-            return Err(RequestError::User("`rank` provided without providing `rank` for `at`".into()));
+            // Overrides `at_discrim` for convenience
+            at_discrim = "rank";
         }
         if someone.is_some() && at_discrim != "someone"{
-            // Better error handling.
-            return Err(RequestError::User("`someone` provided without providing `someone` for `at`".into()));
+            // Overrides `at_discrim` for convenience
+            at_discrim = "someone";
         }
 
         let at = match at_discrim {
