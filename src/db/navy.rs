@@ -4,7 +4,7 @@ use bigdecimal::BigDecimal;
 use chrono::{Duration, Utc};
 use diesel::prelude::*;
 use serenity::all::UserId;
-use crate::schema::{self, naval_victory_counts};
+use crate::schema;
 
 use super::Connector;
 
@@ -93,14 +93,14 @@ impl NavalVictoryCount {
                 schema::naval_victory_counts::updated.lt(usage)
                     .and(schema::naval_victory_counts::victory_fourths.gt(victory_fourths))
             )
-            .select(diesel::dsl::count(naval_victory_counts::id))
+            .select(diesel::dsl::count(schema::naval_victory_counts::id))
             .get_result::<i64>(&mut conn)
     }
 
     pub fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
         let mut conn = connection_maker.connect();
         schema::naval_victory_counts::table
-            .order((naval_victory_counts::victory_fourths.desc(), naval_victory_counts::updated))
+            .order((schema::naval_victory_counts::victory_fourths.desc(), schema::naval_victory_counts::updated))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
@@ -109,10 +109,30 @@ impl NavalVictoryCount {
     pub fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
         let mut conn = connection_maker.connect();
         schema::naval_victory_counts::table
-            .order((naval_victory_counts::victory_fourths, naval_victory_counts::updated.desc()))
+            .order((schema::naval_victory_counts::victory_fourths, schema::naval_victory_counts::updated.desc()))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
     }
-}
 
+    pub fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+        let mut conn = connection_maker.connect();
+        let data = diesel::delete(
+            schema::naval_victory_counts::table
+                .filter(schema::naval_victory_counts::id.eq_any(ids))
+        ).get_results::<Self>(&mut conn).map_err(AdjustmentError::Change)?;
+        let deleted_record_count = data.len();
+
+        // write changes back to db
+        diesel::insert_into(schema::naval_victory_count_changes::table)
+            .values(data.into_iter().map(|NavalVictoryCount { id, victory_fourths, .. }| NewNavalVictoryCountChange {
+                updater: u64::from(deleter).into(),
+                target: id,
+                victory_fourths,
+            }).collect::<Vec<_>>())
+            .execute(&mut conn)
+            .map_err(AdjustmentError::Count)?;
+
+        Ok(deleted_record_count)
+    }
+}

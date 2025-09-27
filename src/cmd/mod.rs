@@ -26,6 +26,7 @@ pub enum RequestKind {
     IndustryProfitBoast,
     IndustryProfitCheck,
     IndustryProfitScoreboard,
+    IndustryProfitClearUnknown,
 
     // User
     NavyVictoryRecordOneUser,
@@ -36,12 +37,14 @@ pub enum RequestKind {
     NavyVictoryBoast,
     NavyVictoryCheck,
     NavyVictoryScoreboard,
+    NavyVictoryClearUnknown,
 
     LegionKillRecord,
     LegionKillDelete,
     LegionKillBoast,
     LegionKillCheck,
     LegionKillScoreboard,
+    LegionKillClearUnknown,
 }
 
 impl RequestKind {
@@ -80,6 +83,9 @@ impl RequestKind {
             RequestKind::IndustryProfitScoreboard => {
                 "scoreboard"
             },
+            RequestKind::IndustryProfitClearUnknown => {
+                "clear_unknown"
+            },
 
             RequestKind::NavyVictoryRecordOneUser => {
                 "Record One Naval Victory"
@@ -103,6 +109,9 @@ impl RequestKind {
             RequestKind::NavyVictoryScoreboard => {
                 "scoreboard"
             },
+            RequestKind::NavyVictoryClearUnknown => {
+                "clear_unknown"
+            },
 
             RequestKind::LegionKillRecord => {
                 "record"
@@ -118,6 +127,9 @@ impl RequestKind {
             },
             RequestKind::LegionKillScoreboard => {
                 "scoreboard"
+            },
+            RequestKind::LegionKillClearUnknown => {
+                "clear_unknown"
             },
         }
     }
@@ -157,6 +169,9 @@ impl RequestKind {
             RequestKind::IndustryProfitScoreboard => {
                 "Creates the scoreboard of profits across Auric."
             },
+            RequestKind::IndustryProfitClearUnknown => {
+                "Removes old unknown users from the scoreboard"
+            },
 
             RequestKind::NavyVictoryRecordOneUser => {
                 "Record one victory for this user."
@@ -180,6 +195,9 @@ impl RequestKind {
             RequestKind::NavyVictoryScoreboard => {
                 "Creates the scoreboard of naval victories across Auric."
             },
+            RequestKind::NavyVictoryClearUnknown => {
+                "Removes old unknown users from the scoreboard"
+            },
 
             RequestKind::LegionKillRecord => {
                 "Records a certain number of kills for a user."
@@ -195,6 +213,9 @@ impl RequestKind {
             },
             RequestKind::LegionKillScoreboard => {
                 "Creates the scoreboard of legion kills across Auric."
+            },
+            RequestKind::LegionKillClearUnknown => {
+                "Removes old unknown users from the scoreboard"
             },
         }
     }
@@ -328,6 +349,9 @@ impl RequestKind {
                     },
                 ]
             },
+            RequestKind::IndustryProfitClearUnknown => {
+                vec![]
+            },
 
             RequestKind::NavyVictoryRecordOneUser => {
                 vec![]
@@ -407,6 +431,9 @@ impl RequestKind {
                     },
                 ]
             },
+            RequestKind::NavyVictoryClearUnknown => {
+                vec![]
+            },
 
             RequestKind::LegionKillRecord => {
                 vec![
@@ -478,6 +505,9 @@ impl RequestKind {
                         required: false,
                     },
                 ]
+            },
+            RequestKind::LegionKillClearUnknown => {
+                vec![]
             },
         }
     }
@@ -715,6 +745,7 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
                         RequestKind::IndustryProfitBoast,
                         RequestKind::IndustryProfitCheck,
                         RequestKind::IndustryProfitScoreboard,
+                        RequestKind::IndustryProfitClearUnknown,
                     ],
                 },
             ],
@@ -738,6 +769,7 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
                         RequestKind::NavyVictoryBoast,
                         RequestKind::NavyVictoryCheck,
                         RequestKind::NavyVictoryScoreboard,
+                        RequestKind::NavyVictoryClearUnknown,
                     ],
                 },
             ],
@@ -758,6 +790,7 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
                         RequestKind::LegionKillBoast,
                         RequestKind::LegionKillCheck,
                         RequestKind::LegionKillScoreboard,
+                        RequestKind::LegionKillClearUnknown,
                     ],
                 },
             ],
@@ -780,18 +813,21 @@ pub enum RequestArgs<'a> {
     IndustryProfitBoast(industry::profit::boast::Request),
     IndustryProfitCheck(industry::profit::check::Request),
     IndustryProfitScoreboard(industry::profit::scoreboard::Request<'a>),
+    IndustryProfitClearUnknown(industry::profit::clear::Request),
 
     NavyVictoryRecord(navy::victory::record::Request),
     NavyVictoryDelete(navy::victory::delete::Request),
     NavyVictoryBoast(navy::victory::boast::Request),
     NavyVictoryCheck(navy::victory::check::Request),
     NavyVictoryScoreboard(navy::victory::scoreboard::Request<'a>),
+    NavyVictoryClearUnknown(navy::victory::clear::Request),
 
     LegionKillRecord(legion::kill::record::Request),
     LegionKillDelete(legion::kill::delete::Request),
     LegionKillBoast(legion::kill::boast::Request),
     LegionKillCheck(legion::kill::check::Request),
     LegionKillScoreboard(legion::kill::scoreboard::Request<'a>),
+    LegionKillClearUnknown(legion::kill::clear::Request),
 }
 
 impl <'a> RequestArgs<'a> {
@@ -869,6 +905,9 @@ impl <'a> RequestArgs<'a> {
                             "scoreboard" => {
                                 Ok(RequestArgs::IndustryProfitScoreboard(industry::profit::scoreboard::Request::parse(cmd, tier2_options.as_slice())?))
                             },
+                            "clear_unknown" => {
+                                Ok(RequestArgs::IndustryProfitClearUnknown(industry::profit::clear::Request::parse(cmd, &[])?))
+                            },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
                                 Err(RequestError::Internal("Unknown subcommand for `industry profit`".into()))
@@ -936,6 +975,9 @@ impl <'a> RequestArgs<'a> {
                             "scoreboard" => {
                                 Ok(RequestArgs::NavyVictoryScoreboard(navy::victory::scoreboard::Request::parse(cmd, tier2_options.as_slice())?))
                             },
+                            "clear_unknown" => {
+                                Ok(RequestArgs::NavyVictoryClearUnknown(navy::victory::clear::Request::parse(cmd, &[])?))
+                            },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
                                 Err(RequestError::Internal("Unknown subcommand for `navy victory`".into()))
@@ -979,6 +1021,9 @@ impl <'a> RequestArgs<'a> {
                             },
                             "scoreboard" => {
                                 Ok(RequestArgs::LegionKillScoreboard(legion::kill::scoreboard::Request::parse(cmd, tier2_options.as_slice())?))
+                            },
+                            "clear_unknown" => {
+                                Ok(RequestArgs::LegionKillClearUnknown(legion::kill::clear::Request::parse(cmd, &[])?))
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
@@ -1069,6 +1114,9 @@ impl <'a> Request<'a> {
             RequestArgs::IndustryProfitScoreboard(req) => {
                 req.execute(ctx).await
             },
+            RequestArgs::IndustryProfitClearUnknown(req) => {
+                req.execute(ctx).await
+            },
 
             RequestArgs::NavyVictoryRecord(req) => {
                 req.execute(ctx).await
@@ -1085,6 +1133,9 @@ impl <'a> Request<'a> {
             RequestArgs::NavyVictoryScoreboard(req) => {
                 req.execute(ctx).await
             },
+            RequestArgs::NavyVictoryClearUnknown(req) => {
+                req.execute(ctx).await
+            },
 
             RequestArgs::LegionKillRecord(req) => {
                 req.execute(ctx).await
@@ -1099,6 +1150,9 @@ impl <'a> Request<'a> {
                 req.execute(ctx).await
             },
             RequestArgs::LegionKillScoreboard(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::LegionKillClearUnknown(req) => {
                 req.execute(ctx).await
             },
         }
