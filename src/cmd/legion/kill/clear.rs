@@ -45,7 +45,7 @@ impl Request {
                 let member = match self.guild.member(&ctx.ctx, record.id.to_u64().unwrap()).await {
                     Ok(m) => Some(m),
                     Err(SerenityError::Http(HttpError::UnsuccessfulRequest(e @ ErrorResponse { status_code: StatusCode::NOT_FOUND, error: DiscordJsonError { code: 10007, .. }, .. }))) => {
-                        trc::info!("what's going on? {e:?}");
+                        trc::info!("legion kill member check: {e:?}");
                         None
                     },
                     Err(e) => {
