@@ -1,7 +1,7 @@
 use bigdecimal::ToPrimitive;
 use tracing as trc;
 
-use serenity::all::{CommandInteraction, Error as SerenityError, ErrorResponse, GuildId, HttpError, ResolvedOption, StatusCode, UserId};
+use serenity::all::{CommandInteraction, DiscordJsonError, Error as SerenityError, ErrorResponse, GuildId, HttpError, ResolvedOption, StatusCode, UserId};
 
 use crate::{cmd::RequestError, db::NavalVictoryCount, discord::ExecutionContext};
 
@@ -44,7 +44,7 @@ impl Request {
             for record in active_records {
                 let member = match self.guild.member(&ctx.ctx, record.id.to_u64().unwrap()).await {
                     Ok(m) => Some(m),
-                    Err(SerenityError::Http(HttpError::UnsuccessfulRequest(e @ ErrorResponse { status_code: StatusCode::NOT_FOUND, .. }))) => {
+                    Err(SerenityError::Http(HttpError::UnsuccessfulRequest(e @ ErrorResponse { status_code: StatusCode::NOT_FOUND, error: DiscordJsonError { code: 10007, .. }, .. }))) => {
                         trc::info!("what's going on? {e:?}");
                         None
                     },
