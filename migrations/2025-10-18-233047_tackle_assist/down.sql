@@ -1,0 +1,1 @@
+DROP TABLE naval_tackle_assist_count_changes, naval_tackle_assist_counts;

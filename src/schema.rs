@@ -60,6 +60,27 @@ diesel::table! {
 }
 
 diesel::table! {
+    naval_tackle_assist_count_changes (id) {
+        id -> Int8,
+        created -> Timestamptz,
+        updater -> Numeric,
+        target -> Numeric,
+        tackle_assists -> Numeric,
+        #[max_length = 10000]
+        user_note -> Nullable<Varchar>,
+    }
+}
+
+diesel::table! {
+    naval_tackle_assist_counts (id) {
+        id -> Numeric,
+        created -> Timestamptz,
+        updated -> Timestamptz,
+        tackle_assists -> Numeric,
+    }
+}
+
+diesel::table! {
     naval_victory_count_changes (id) {
         id -> Int8,
         created -> Timestamptz,
@@ -85,6 +106,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     industry_profit_counts,
     legion_kill_count_changes,
     legion_kill_counts,
+    naval_tackle_assist_count_changes,
+    naval_tackle_assist_counts,
     naval_victory_count_changes,
     naval_victory_counts,
 );
