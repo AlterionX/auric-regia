@@ -39,6 +39,13 @@ pub enum RequestKind {
     NavyVictoryScoreboard,
     NavyVictoryClearUnknown,
 
+    NavyTackleAssistRecord,
+    NavyTackleAssistDelete,
+    NavyTackleAssistBoast,
+    NavyTackleAssistCheck,
+    NavyTackleAssistScoreboard,
+    NavyTackleAssistClearUnknown,
+
     LegionKillRecord,
     LegionKillDelete,
     LegionKillBoast,
@@ -110,6 +117,25 @@ impl RequestKind {
                 "scoreboard"
             },
             RequestKind::NavyVictoryClearUnknown => {
+                "clear_unknown"
+            },
+
+            RequestKind::NavyTackleAssistRecord => {
+                "record"
+            },
+            RequestKind::NavyTackleAssistDelete => {
+                "delete"
+            },
+            RequestKind::NavyTackleAssistBoast => {
+                "boast"
+            },
+            RequestKind::NavyTackleAssistCheck => {
+                "check"
+            },
+            RequestKind::NavyTackleAssistScoreboard => {
+                "scoreboard"
+            },
+            RequestKind::NavyTackleAssistClearUnknown => {
                 "clear_unknown"
             },
 
@@ -196,6 +222,25 @@ impl RequestKind {
                 "Creates the scoreboard of naval victories across Auric."
             },
             RequestKind::NavyVictoryClearUnknown => {
+                "Removes old unknown users from the scoreboard"
+            },
+
+            RequestKind::NavyTackleAssistRecord => {
+                "Records a certain number of naval tackle assists for a user."
+            },
+            RequestKind::NavyTackleAssistDelete => {
+                "Removes a certain number of naval tackle assists for a user. Only goes down to 0!"
+            },
+            RequestKind::NavyTackleAssistBoast => {
+                "Boast about your naval tackle assists."
+            },
+            RequestKind::NavyTackleAssistCheck => {
+                "Checks the number of naval tackle assists for a specific user (or yourself)."
+            },
+            RequestKind::NavyTackleAssistScoreboard => {
+                "Creates the scoreboard of naval tackle assists across Auric."
+            },
+            RequestKind::NavyTackleAssistClearUnknown => {
                 "Removes old unknown users from the scoreboard"
             },
 
@@ -432,6 +477,81 @@ impl RequestKind {
                 ]
             },
             RequestKind::NavyVictoryClearUnknown => {
+                vec![]
+            },
+
+            RequestKind::NavyTackleAssistRecord => {
+                vec![
+                    RawCommandOptionEntry::Number {
+                        name: "tackle_assists",
+                        description: "Number of tackle assists. Defaults to 1.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being recorded for. Leaving this out means that you're recording your own tackle assists.",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::NavyTackleAssistDelete => {
+                vec![
+                    RawCommandOptionEntry::Number {
+                        name: "tackle_assists",
+                        description: "Number of tackle assists. Defaults to 1.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being recorded for. Leaving this out means that you're recording your own tackle assists.",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::NavyTackleAssistBoast => {
+                vec![]
+            },
+            RequestKind::NavyTackleAssistCheck => {
+                vec![
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person to get tackle assists for. Defaults to self. Quieter than boasting.",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::NavyTackleAssistScoreboard => {
+                vec![
+                    RawCommandOptionEntry::Integer {
+                        name: "limit",
+                        description: "Maximum entries to return. Max of 20. Defaults to 10.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::StringSelect {
+                        name: "at",
+                        description: "What to orient the scoreboard on.",
+                        required: false,
+                        choices: vec![
+                            ("Me", "me"),
+                            ("Bottom", "bottom"),
+                            ("Top (default)", "top"),
+                            ("Someone", "someone"),
+                            ("Rank", "rank"),
+                        ],
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "someone",
+                        description: "Should only be provided if \"at\" is set to \"someone\".",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::Integer {
+                        name: "rank",
+                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\"",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::NavyTackleAssistClearUnknown => {
                 vec![]
             },
 
@@ -772,6 +892,18 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop> {
                         RequestKind::NavyVictoryClearUnknown,
                     ],
                 },
+                CommandTreeIntermediate {
+                    name: "tackle_assist",
+                    description: "Commands for managing tackle assist counts",
+                    children: vec![
+                        RequestKind::NavyTackleAssistRecord,
+                        RequestKind::NavyTackleAssistDelete,
+                        RequestKind::NavyTackleAssistBoast,
+                        RequestKind::NavyTackleAssistCheck,
+                        RequestKind::NavyTackleAssistScoreboard,
+                        RequestKind::NavyTackleAssistClearUnknown,
+                    ],
+                },
             ],
         },
         CommandTreeTop::Complex {
@@ -821,6 +953,13 @@ pub enum RequestArgs<'a> {
     NavyVictoryCheck(navy::victory::check::Request),
     NavyVictoryScoreboard(navy::victory::scoreboard::Request<'a>),
     NavyVictoryClearUnknown(navy::victory::clear::Request),
+
+    NavyTackleAssistRecord(navy::tackle_assist::record::Request),
+    NavyTackleAssistDelete(navy::tackle_assist::delete::Request),
+    NavyTackleAssistBoast(navy::tackle_assist::boast::Request),
+    NavyTackleAssistCheck(navy::tackle_assist::check::Request),
+    NavyTackleAssistScoreboard(navy::tackle_assist::scoreboard::Request<'a>),
+    NavyTackleAssistClearUnknown(navy::tackle_assist::clear::Request),
 
     LegionKillRecord(legion::kill::record::Request),
     LegionKillDelete(legion::kill::delete::Request),
@@ -984,6 +1123,41 @@ impl <'a> RequestArgs<'a> {
                             },
                         }
                     },
+                    "tackle_assist" => {
+                        let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
+                            return Err(RequestError::Internal("Missing subcommand group for `navy`".into()));
+                        };
+                        let Some(tier2) = tier1_options.first() else {
+                            return Err(RequestError::Internal("Missing options for `navy tackle_assist`".into()));
+                        };
+                        let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
+                            return Err(RequestError::Internal("Missing subcommand for `navy tackle_assist`".into()));
+                        };
+                        match tier2.name {
+                            "record" => {
+                                Ok(RequestArgs::NavyTackleAssistRecord(navy::tackle_assist::record::Request::parse(cmd, tier2_options.as_slice())?))
+                            },
+                            "delete" => {
+                                Ok(RequestArgs::NavyTackleAssistDelete(navy::tackle_assist::delete::Request::parse(cmd, tier2_options.as_slice())?))
+                            },
+                            "boast" => {
+                                Ok(RequestArgs::NavyTackleAssistBoast(navy::tackle_assist::boast::Request::parse(cmd, &[])?))
+                            },
+                            "check" => {
+                                Ok(RequestArgs::NavyTackleAssistCheck(navy::tackle_assist::check::Request::parse(cmd, tier2_options.as_slice())?))
+                            },
+                            "scoreboard" => {
+                                Ok(RequestArgs::NavyTackleAssistScoreboard(navy::tackle_assist::scoreboard::Request::parse(cmd, tier2_options.as_slice())?))
+                            },
+                            "clear_unknown" => {
+                                Ok(RequestArgs::NavyTackleAssistClearUnknown(navy::tackle_assist::clear::Request::parse(cmd, &[])?))
+                            },
+                            _ => {
+                                trc::warn!("Unknown subcommand {:?}", tier1);
+                                Err(RequestError::Internal("Unknown subcommand for `navy tackle_assist`".into()))
+                            },
+                        }
+                    },
                     _ => {
                         trc::warn!("Unknown subcommand {:?}", tier1);
                         Err(RequestError::Internal("Unknown subcommand for `navy`".into()))
@@ -1134,6 +1308,25 @@ impl <'a> Request<'a> {
                 req.execute(ctx).await
             },
             RequestArgs::NavyVictoryClearUnknown(req) => {
+                req.execute(ctx).await
+            },
+
+            RequestArgs::NavyTackleAssistRecord(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::NavyTackleAssistDelete(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::NavyTackleAssistBoast(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::NavyTackleAssistCheck(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::NavyTackleAssistScoreboard(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::NavyTackleAssistClearUnknown(req) => {
                 req.execute(ctx).await
             },
 
