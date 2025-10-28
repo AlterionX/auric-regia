@@ -56,7 +56,7 @@ impl Request {
         };
 
         let final_tackle_assists = match db::NavalTackleAssistCount::adjust_count(&ctx.db_cfg, change) {
-            Ok(v) => v.to_i64().unwrap_or(0) as f64 / 4.,
+            Ok(v) => v.to_i64().unwrap_or(0),
             Err(e) => {
                 trc::error!("Failed to update count for navy tackle assist record. err={e:?}");
                 let _ = ctx.reply(format!("Something broke... please contact a mod")).await;

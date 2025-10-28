@@ -199,9 +199,9 @@ impl<'a> Request<'a> {
                 "\t{}) {}: {}",
                 start + offset as i64,
                 Mention::User(UserId::from(record.id.to_u64().unwrap())),
-                record.tackle_assists.to_u64().unwrap() as f64 / 4.
+                record.tackle_assists.to_u64().unwrap()
             ).as_str());
-            if record.tackle_assists.to_u64().unwrap() != 4 {
+            if record.tackle_assists.to_u64().unwrap() != 1 {
                 buffer.push_str(" tackle assists\n");
             } else {
                 buffer.push_str(" tackle assist\n");

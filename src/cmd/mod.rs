@@ -482,7 +482,7 @@ impl RequestKind {
 
             RequestKind::NavyTackleAssistRecord => {
                 vec![
-                    RawCommandOptionEntry::Number {
+                    RawCommandOptionEntry::Integer {
                         name: "tackle_assists",
                         description: "Number of tackle assists. Defaults to 1.",
                         required: false,
@@ -496,7 +496,7 @@ impl RequestKind {
             },
             RequestKind::NavyTackleAssistDelete => {
                 vec![
-                    RawCommandOptionEntry::Number {
+                    RawCommandOptionEntry::Integer {
                         name: "tackle_assists",
                         description: "Number of tackle assists. Defaults to 1.",
                         required: false,
