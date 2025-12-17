@@ -17,10 +17,10 @@ pub struct NewMonthlyGoal {
 }
 
 #[derive(Debug, Clone)]
-#[derive(Insertable, Queryable, Identifiable)]
+#[derive(Queryable, Identifiable, Insertable)]
 #[diesel(table_name = schema::monthly_goals)]
 pub struct MonthlyGoal {
-    pub id: BigDecimal,
+    pub id: i64,
     pub created: DateTime<Utc>,
     pub updater: BigDecimal,
     pub tag: String,
