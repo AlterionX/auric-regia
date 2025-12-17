@@ -2,6 +2,7 @@ pub mod navy;
 pub mod legion;
 pub mod industry;
 pub mod event;
+pub mod monthly_goal;
 
 use tracing as trc;
 
@@ -56,8 +57,8 @@ pub enum RequestArgs<'a> {
     LegionKillScoreboard(legion::kill::scoreboard::Request<'a>),
     LegionKillClearUnknown(legion::kill::clear::Request),
 
-    MonthlyGoalCheck(()),
-    MonthlyGoalSet(()),
+    MonthlyGoalCheck(monthly_goal::check::Request<'a>),
+    MonthlyGoalSet(monthly_goal::set::Request<'a>),
 }
 
 impl DiscordCommandDescriptor for RequestKind {
@@ -936,6 +937,35 @@ impl DiscordCommandDescriptor for RequestKind {
                     },
                 }
             },
+            "monthly goal" => {
+                let tier0_options: Vec<ResolvedOption<'a>> = cmd.data.options();
+                let Some(tier1) = tier0_options.first() else {
+                    return Err(RequestError::Internal("Missing options for `monthly_goal`.".into()));
+                };
+                match tier1.name {
+                    "kill" => {
+                        let ResolvedValue::SubCommand(ref tier1_options) = tier1.value else {
+                            return Err(RequestError::Internal("Missing subcommand for `monthly_goal`".into()));
+                        };
+                        match tier1.name {
+                            "set" => {
+                                Ok(RequestArgs::MonthlyGoalSet(monthly_goal::set::Request::parse(cmd, tier1_options.as_slice())?))
+                            },
+                            "check" => {
+                                Ok(RequestArgs::MonthlyGoalCheck(monthly_goal::check::Request::parse(cmd, tier1_options.as_slice())?))
+                            },
+                            _ => {
+                                trc::warn!("Unknown subcommand {:?}", tier1);
+                                Err(RequestError::Internal("Unknown subcommand for `legion kill`".into()))
+                            },
+                        }
+                    },
+                    _ => {
+                        trc::warn!("Unknown subcommand {:?}", tier1);
+                        Err(RequestError::Internal("Unknown subcommand for `legion`".into()))
+                    },
+                }
+            },
             _ => {
                 trc::error!("Unknown command {:?} received", cmd);
                 Err(RequestError::Internal("Unknown command.".into()))
@@ -1042,11 +1072,11 @@ impl <'a> DiscordCommandArgs for RequestArgs<'a> {
                 req.execute(ctx).await
             },
 
-            RequestArgs::MonthlyGoalCheck(()) => {
-                todo!();
+            RequestArgs::MonthlyGoalCheck(req) => {
+                req.execute(ctx).await
             },
-            RequestArgs::MonthlyGoalSet(()) => {
-                todo!();
+            RequestArgs::MonthlyGoalSet(req) => {
+                req.execute(ctx).await
             },
         }
     }

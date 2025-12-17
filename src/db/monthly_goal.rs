@@ -9,11 +9,11 @@ use azel::db::{Connector, DbResult};
 #[derive(Debug, Clone)]
 #[derive(Insertable)]
 #[diesel(table_name = schema::monthly_goals)]
-pub struct NewMonthlyGoal {
+pub struct NewMonthlyGoal<'a> {
     pub updater: BigDecimal,
-    pub tag: String,
-    pub header: String,
-    pub body: String,
+    pub tag: &'a str,
+    pub header: &'a str,
+    pub body: &'a str,
 }
 
 #[derive(Debug, Clone)]
@@ -29,7 +29,7 @@ pub struct MonthlyGoal {
 }
 
 impl MonthlyGoal {
-    pub async fn create(connection_maker: &impl Connector, new: NewMonthlyGoal) -> DbResult<()> {
+    pub async fn create(connection_maker: &impl Connector, new: NewMonthlyGoal<'_>) -> DbResult<()> {
         let mut conn = connection_maker.async_connect().await?;
 
         diesel::insert_into(schema::monthly_goals::table)
