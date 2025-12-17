@@ -60,6 +60,20 @@ diesel::table! {
 }
 
 diesel::table! {
+    monthly_goals (id) {
+        id -> Int8,
+        created -> Timestamptz,
+        updater -> Numeric,
+        #[max_length = 100]
+        tag -> Nullable<Varchar>,
+        #[max_length = 256]
+        header -> Nullable<Varchar>,
+        #[max_length = 4096]
+        body -> Nullable<Varchar>,
+    }
+}
+
+diesel::table! {
     naval_tackle_assist_count_changes (id) {
         id -> Int8,
         created -> Timestamptz,
@@ -106,6 +120,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     industry_profit_counts,
     legion_kill_count_changes,
     legion_kill_counts,
+    monthly_goals,
     naval_tackle_assist_count_changes,
     naval_tackle_assist_counts,
     naval_victory_count_changes,
