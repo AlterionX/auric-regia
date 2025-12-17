@@ -33,7 +33,9 @@ pub enum RequestArgs<'a> {
 
     // Dummy variants needed for the request kind enum, these are
     // subsumed into the ones below.
+    #[allow(dead_code)]
     NavyVictoryRecordOneUser(!),
+    #[allow(dead_code)]
     NavyVictoryCheckUser(!),
 
     NavyVictoryRecord(navy::victory::record::Request),
