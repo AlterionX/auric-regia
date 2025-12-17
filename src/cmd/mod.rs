@@ -52,6 +52,9 @@ pub enum RequestKind {
     LegionKillCheck,
     LegionKillScoreboard,
     LegionKillClearUnknown,
+
+    MonthlyGoalCheck,
+    MonthlyGoalSet,
 }
 
 impl RequestKind {
@@ -157,6 +160,13 @@ impl RequestKind {
             RequestKind::LegionKillClearUnknown => {
                 "clear_unknown"
             },
+
+            RequestKind::MonthlyGoalCheck => {
+                "check"
+            },
+            RequestKind::MonthlyGoalSet => {
+                "set"
+            },
         }
     }
 
@@ -261,6 +271,13 @@ impl RequestKind {
             },
             RequestKind::LegionKillClearUnknown => {
                 "Removes old unknown users from the scoreboard"
+            },
+
+            RequestKind::MonthlyGoalCheck => {
+                "Check the monthly goal for the org or a branch"
+            },
+            RequestKind::MonthlyGoalSet => {
+                "Check the monthly goal for the org or a branch"
             },
         }
     }
@@ -628,6 +645,47 @@ impl RequestKind {
             },
             RequestKind::LegionKillClearUnknown => {
                 vec![]
+            },
+
+            RequestKind::MonthlyGoalCheck => {
+                vec![
+                    RawCommandOptionEntry::StringSelect {
+                        name: "branch",
+                        description: "Which branch to set the goal for, or the org",
+                        required: false,
+                        choices: vec![
+                            ("Main (default)", "main"),
+                            ("Navy", "navy"),
+                            ("Legion", "legion"),
+                            ("Industry", "industry"),
+                        ],
+                    }
+                ]
+            },
+            RequestKind::MonthlyGoalSet => {
+                vec![
+                    RawCommandOptionEntry::StringSelect {
+                        name: "branch",
+                        description: "Which branch to set the goal for, or the org",
+                        required: false,
+                        choices: vec![
+                            ("Main (default)", "main"),
+                            ("Navy", "navy"),
+                            ("Legion", "legion"),
+                            ("Industry", "industry"),
+                        ],
+                    },
+                    RawCommandOptionEntry::String {
+                        name: "header",
+                        description: "Header of the message, as of 2025/12/16 max 100 chars",
+                        required: true,
+                    },
+                    RawCommandOptionEntry::String {
+                        name: "body",
+                        description: "Body of the message, as of 2025/12/16 max 5000 chars",
+                        required: true,
+                    },
+                ]
             },
         }
     }
