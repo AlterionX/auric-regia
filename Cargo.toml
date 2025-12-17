@@ -60,5 +60,11 @@ version = "0.7"
 features = ["postgres"]
 
 [dependencies.azel]
+path = "../azel"
 version = "0.1"
+
+[dev-dependencies.azel]
+path = "../azel"
+version = "0.1"
+features = ["test-utils"]
 

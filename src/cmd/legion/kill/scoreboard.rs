@@ -4,7 +4,9 @@ use tracing as trc;
 
 use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedValue, UserId};
 
-use crate::{cmd::RequestError, db::LegionKillCount, discord::ExecutionContext};
+use azel::discord::ExecutionContext;
+
+use crate::{cmd::RequestError, db::LegionKillCount};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Locator {
@@ -118,7 +120,7 @@ impl<'a> Request<'a> {
 
         let (start, ordering) = match self.at {
             Locator::Top => {
-                let v = match LegionKillCount::load_asc(&ctx.db_cfg, 0, self.limit) {
+                let v = match LegionKillCount::load_asc(&ctx.db_cfg, 0, self.limit).await {
                     Ok(v) => v,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
@@ -128,14 +130,14 @@ impl<'a> Request<'a> {
                 (1, v)
             },
             Locator::Bottom => {
-                let count = match LegionKillCount::count_rows(&ctx.db_cfg) {
+                let count = match LegionKillCount::count_rows(&ctx.db_cfg).await {
                     Ok(c) => c,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
                         return Err(RequestError::Internal("failed to get number of users".into()));
                     },
                 };
-                let mut a = match LegionKillCount::load_desc(&ctx.db_cfg, 0, self.limit) {
+                let mut a = match LegionKillCount::load_desc(&ctx.db_cfg, 0, self.limit).await {
                     Ok(v) => v,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
@@ -146,7 +148,7 @@ impl<'a> Request<'a> {
                 (count - a.len() as i64, a)
             },
             Locator::Rank(r) => {
-                let a = match LegionKillCount::load_asc(&ctx.db_cfg, r, self.limit) {
+                let a = match LegionKillCount::load_asc(&ctx.db_cfg, r, self.limit).await {
                     Ok(v) => v,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
@@ -156,7 +158,7 @@ impl<'a> Request<'a> {
                 (r + 1, a)
             },
             Locator::Me => {
-                let rank = match LegionKillCount::get_rank_of(&ctx.db_cfg, ctx.cmd.user.id) {
+                let rank = match LegionKillCount::get_rank_of(&ctx.db_cfg, ctx.cmd.user.id).await {
                     Ok(r) => r,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from me {:?} due to {e:?}.", ctx.cmd.user.id);
@@ -164,7 +166,7 @@ impl<'a> Request<'a> {
                     },
                 };
                 let start = 0.max(rank - (self.limit / 2));
-                let v = match LegionKillCount::load_asc(&ctx.db_cfg, start, self.limit) {
+                let v = match LegionKillCount::load_asc(&ctx.db_cfg, start, self.limit).await {
                     Ok(v) => v,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
@@ -174,7 +176,7 @@ impl<'a> Request<'a> {
                 (start + 1, v)
             },
             Locator::Someone(u) => {
-                let rank = match LegionKillCount::get_rank_of(&ctx.db_cfg, u) {
+                let rank = match LegionKillCount::get_rank_of(&ctx.db_cfg, u).await {
                     Ok(r) => r,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from me {:?} due to {e:?}.", u);
@@ -182,7 +184,7 @@ impl<'a> Request<'a> {
                     },
                 };
                 let start = 0.max(rank - (self.limit / 2));
-                let v = match LegionKillCount::load_asc(&ctx.db_cfg, start, self.limit) {
+                let v = match LegionKillCount::load_asc(&ctx.db_cfg, start, self.limit).await {
                     Ok(v) => v,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");

@@ -2,7 +2,9 @@ use tracing as trc;
 
 use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedValue, UserId};
 
-use crate::{cmd::RequestError, db, discord::ExecutionContext};
+use azel::discord::ExecutionContext;
+
+use crate::{cmd::RequestError, db};
 
 #[derive(Debug)]
 pub struct Request {
@@ -53,7 +55,7 @@ impl Request {
             alpha_united_earth_credits: self.auec.into(),
         };
 
-        let final_auec = match db::IndustryProfitCount::adjust_count(&ctx.db_cfg, change) {
+        let final_auec = match db::IndustryProfitCount::adjust_count(&ctx.db_cfg, change).await {
             Ok(v) => v,
             Err(e) => {
                 trc::error!("Failed to update count for industry profit record. err={e:?}");

@@ -4,7 +4,9 @@ use tracing as trc;
 
 use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedValue, UserId};
 
-use crate::{cmd::RequestError, db, discord::ExecutionContext};
+use azel::discord::ExecutionContext;
+
+use crate::{cmd::RequestError, db};
 
 #[derive(Debug)]
 pub struct Request {
@@ -55,7 +57,7 @@ impl Request {
             alpha_united_earth_credits: BigDecimal::from(self.auec).neg(),
         };
 
-        let Ok(final_auec) = db::IndustryProfitCount::adjust_count(&ctx.db_cfg, change) else {
+        let Ok(final_auec) = db::IndustryProfitCount::adjust_count(&ctx.db_cfg, change).await else {
             trc::error!("Failed to update count for industry profit delete.");
             let _ = ctx.reply(format!("Something broke... please contact a mod")).await;
             return Ok(());

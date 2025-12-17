@@ -4,7 +4,9 @@ use tracing as trc;
 
 use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedValue, UserId};
 
-use crate::{cmd::RequestError, db, discord::ExecutionContext};
+use azel::discord::ExecutionContext;
+
+use crate::{cmd::RequestError, db};
 
 #[derive(Debug)]
 pub struct Request<'a> {
@@ -66,7 +68,7 @@ impl<'a> Request<'a> {
             user_note: self.note.map(|s| s.to_owned()),
         };
 
-        let Ok(final_count) = db::EventParticipationCount::adjust_count(&ctx.db_cfg, change) else {
+        let Ok(final_count) = db::EventParticipationCount::adjust_count(&ctx.db_cfg, change).await else {
             trc::error!("Failed to update count for event participation remove.");
             let _ = ctx.reply("Something broke... please contact a mod".to_owned()).await;
             return Ok(());

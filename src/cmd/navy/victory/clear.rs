@@ -3,7 +3,9 @@ use tracing as trc;
 
 use serenity::all::{CommandInteraction, DiscordJsonError, Error as SerenityError, ErrorResponse, GuildId, HttpError, ResolvedOption, StatusCode, UserId};
 
-use crate::{cmd::RequestError, db::NavalVictoryCount, discord::ExecutionContext};
+use azel::discord::ExecutionContext;
+
+use crate::{cmd::RequestError, db::NavalVictoryCount};
 
 #[derive(Debug)]
 pub struct Request {
@@ -29,7 +31,7 @@ impl Request {
         let mut current_offset = 0;
         let mut records_to_delete = vec![];
 
-        while let Some(active_records) = match NavalVictoryCount::load_asc(&ctx.db_cfg, current_offset, QUERY_LIMIT) {
+        while let Some(active_records) = match NavalVictoryCount::load_asc(&ctx.db_cfg, current_offset, QUERY_LIMIT).await {
             Ok(v) => if v.is_empty() {
                 None
             } else {
@@ -60,7 +62,7 @@ impl Request {
             }
         }
 
-        match NavalVictoryCount::delete(&ctx.db_cfg, self.deleter, records_to_delete.as_slice()) {
+        match NavalVictoryCount::delete(&ctx.db_cfg, self.deleter, records_to_delete.as_slice()).await {
             Ok(count) => if count == 0 {
                 ctx.reply("No records deleted.".to_owned()).await
             } else if count == 1 {

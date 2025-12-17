@@ -4,7 +4,9 @@ use tracing as trc;
 
 use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedValue, UserId};
 
-use crate::{cmd::RequestError, db, discord::ExecutionContext};
+use azel::discord::ExecutionContext;
+
+use crate::{cmd::RequestError, db};
 
 #[derive(Debug)]
 pub struct Request {
@@ -57,7 +59,7 @@ impl Request {
             tackle_assists: BigDecimal::from(self.tackle_assists).neg(),
         };
 
-        let Ok(new_tackle_assists) = db::NavalTackleAssistCount::adjust_count(&ctx.db_cfg, change) else {
+        let Ok(new_tackle_assists) = db::NavalTackleAssistCount::adjust_count(&ctx.db_cfg, change).await else {
             trc::error!("Failed to update count for navy tackle_assist delete.");
             let _ = ctx.reply(format!("Something broke... please contact a mod")).await;
             return Ok(());

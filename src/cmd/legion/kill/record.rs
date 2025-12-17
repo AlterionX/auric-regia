@@ -2,7 +2,9 @@ use tracing as trc;
 
 use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedValue, UserId};
 
-use crate::{cmd::RequestError, db, discord::ExecutionContext};
+use azel::discord::ExecutionContext;
+
+use crate::{cmd::RequestError, db};
 
 #[derive(Debug)]
 pub struct Request {
@@ -55,7 +57,7 @@ impl Request {
             kills: self.kills.into(),
         };
 
-        let final_kills = match db::LegionKillCount::adjust_count(&ctx.db_cfg, change) {
+        let final_kills = match db::LegionKillCount::adjust_count(&ctx.db_cfg, change).await {
             Ok(v) => v,
             Err(e) => {
                 trc::error!("Failed to update count for legion kill record. err={e:?}");

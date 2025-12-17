@@ -2,11 +2,12 @@ use std::ops::Add;
 
 use bigdecimal::BigDecimal;
 use chrono::{Duration, Utc};
-use diesel::prelude::*;
+use diesel::{BoolExpressionMethods, ConnectionError, ExpressionMethods, OptionalExtension, QueryDsl, prelude::{Identifiable, Insertable, Queryable}};
+use diesel_async::RunQueryDsl;
 use serenity::all::UserId;
 use crate::schema;
 
-use super::Connector;
+use azel::db::{Connector, DbResult};
 
 #[derive(Debug, Clone)]
 #[derive(Insertable)]
@@ -34,26 +35,29 @@ diesel::define_sql_function! {
 
 #[derive(Debug, PartialEq)]
 pub enum AdjustmentError {
+    Connect(ConnectionError),
     Change(diesel::result::Error),
     Count(diesel::result::Error),
 }
 
 impl IndustryProfitCount {
-    pub fn load_for(connection_maker: &impl Connector, user: UserId) -> Option<Self> {
-        let mut conn = connection_maker.connect();
+    pub async fn load_for(connection_maker: &impl Connector, user: UserId) -> Option<Self> {
+        let mut conn = connection_maker.async_connect().await.ok()?;
         let id: u64 = user.into();
         schema::industry_profit_counts::table
             .filter(schema::industry_profit_counts::id.eq(BigDecimal::from(id)))
             .get_result(&mut conn)
+            .await
             .optional()
             .expect("query to be fine")
     }
 
-    pub fn adjust_count(connection_maker: &impl Connector, change: NewIndustryProfitCountChange) -> Result<BigDecimal, AdjustmentError> {
-        let mut conn = connection_maker.connect();
+    pub async fn adjust_count(connection_maker: &impl Connector, change: NewIndustryProfitCountChange) -> Result<BigDecimal, AdjustmentError> {
+        let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         diesel::insert_into(schema::industry_profit_count_changes::table)
             .values(&change)
             .execute(&mut conn)
+            .await
             .map_err(AdjustmentError::Change)?;
         diesel::insert_into(schema::industry_profit_counts::table)
             .values((
@@ -69,52 +73,56 @@ impl IndustryProfitCount {
             ))
             .returning(schema::industry_profit_counts::alpha_united_earth_credits)
             .get_result(&mut conn)
+            .await
             .map_err(AdjustmentError::Count)
     }
 
-    pub fn count_rows(connection_maker: &impl Connector) -> Result<i64, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::industry_profit_counts::table.count().get_result(&mut conn)
+    pub async fn count_rows(connection_maker: &impl Connector) -> DbResult<i64> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::industry_profit_counts::table.count().get_result(&mut conn).await?)
     }
 
-    pub fn get_rank_of(connection_maker: &impl Connector, user_id: UserId) -> Result<i64, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        let user_record = Self::load_for(connection_maker, user_id);
+    pub async fn get_rank_of(connection_maker: &impl Connector, user_id: UserId) -> DbResult<i64> {
+        let mut conn = connection_maker.async_connect().await?;
+        let user_record = Self::load_for(connection_maker, user_id).await;
         let alpha_united_earth_credits = user_record.as_ref().map(|r| r.alpha_united_earth_credits.clone()).unwrap_or_default();
         let usage = user_record.as_ref().map(|r| r.updated).unwrap_or(Utc::now() + Duration::milliseconds(100));
-        schema::industry_profit_counts::table
+        Ok(schema::industry_profit_counts::table
             .filter(
                 schema::industry_profit_counts::updated.lt(usage)
                     .and(schema::industry_profit_counts::alpha_united_earth_credits.gt(alpha_united_earth_credits))
             )
             .select(diesel::dsl::count(schema::industry_profit_counts::id))
             .get_result::<i64>(&mut conn)
+            .await?)
     }
 
-    pub fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::industry_profit_counts::table
+    pub async fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::industry_profit_counts::table
             .order((schema::industry_profit_counts::alpha_united_earth_credits.desc(), schema::industry_profit_counts::updated))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
+            .await?)
     }
 
-    pub fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::industry_profit_counts::table
+    pub async fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::industry_profit_counts::table
             .order((schema::industry_profit_counts::alpha_united_earth_credits, schema::industry_profit_counts::updated.desc()))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
+            .await?)
     }
 
-    pub fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
-        let mut conn = connection_maker.connect();
+    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+        let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         let data = diesel::delete(
             schema::industry_profit_counts::table
                 .filter(schema::industry_profit_counts::id.eq_any(ids))
-        ).get_results::<Self>(&mut conn).map_err(AdjustmentError::Change)?;
+        ).get_results::<Self>(&mut conn).await.map_err(AdjustmentError::Change)?;
         let deleted_record_count = data.len();
 
         // write changes back to db
@@ -125,6 +133,7 @@ impl IndustryProfitCount {
                 alpha_united_earth_credits,
             }).collect::<Vec<_>>())
             .execute(&mut conn)
+            .await
             .map_err(AdjustmentError::Count)?;
 
         Ok(deleted_record_count)

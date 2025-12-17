@@ -2,14 +2,16 @@ use std::ops::Add;
 
 use bigdecimal::BigDecimal;
 use chrono::{Duration, Utc};
-use diesel::prelude::*;
+use diesel::{BoolExpressionMethods, ExpressionMethods, OptionalExtension, QueryDsl, prelude::{Identifiable, Insertable, Queryable}};
+use diesel_async::RunQueryDsl;
 use serenity::all::UserId;
 use crate::schema;
 
-use super::Connector;
+use azel::db::{Connector, DbResult};
 
 #[derive(Debug, PartialEq)]
 pub enum AdjustmentError {
+    Connect(diesel::result::ConnectionError),
     Change(diesel::result::Error),
     Count(diesel::result::Error),
 }
@@ -39,21 +41,23 @@ diesel::define_sql_function! {
 }
 
 impl NavalVictoryCount {
-    pub fn load_for(connection_maker: &impl Connector, user: UserId) -> Option<Self> {
-        let mut conn = connection_maker.connect();
+    pub async fn load_for(connection_maker: &impl Connector, user: UserId) -> Option<Self> {
+        let mut conn = connection_maker.async_connect().await.ok()?;
         let id: u64 = user.into();
         schema::naval_victory_counts::table
             .filter(schema::naval_victory_counts::id.eq(BigDecimal::from(id)))
             .get_result(&mut conn)
+            .await
             .optional()
             .expect("query to be fine")
     }
 
-    pub fn adjust_count(connection_maker: &impl Connector, change: NewNavalVictoryCountChange) -> Result<BigDecimal, AdjustmentError> {
-        let mut conn = connection_maker.connect();
+    pub async fn adjust_count(connection_maker: &impl Connector, change: NewNavalVictoryCountChange) -> Result<BigDecimal, AdjustmentError> {
+        let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         diesel::insert_into(schema::naval_victory_count_changes::table)
             .values(&change)
             .execute(&mut conn)
+            .await
             .map_err(AdjustmentError::Change)?;
         diesel::insert_into(schema::naval_victory_counts::table)
             .values((
@@ -75,52 +79,56 @@ impl NavalVictoryCount {
             ))
             .returning(schema::naval_victory_counts::victory_fourths)
             .get_result(&mut conn)
+            .await
             .map_err(AdjustmentError::Count)
     }
 
-    pub fn count_rows(connection_maker: &impl Connector) -> Result<i64, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::naval_victory_counts::table.count().get_result(&mut conn)
+    pub async fn count_rows(connection_maker: &impl Connector) -> DbResult<i64> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::naval_victory_counts::table.count().get_result(&mut conn).await?)
     }
 
-    pub fn get_rank_of(connection_maker: &impl Connector, user_id: UserId) -> Result<i64, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        let user_record = Self::load_for(connection_maker, user_id);
+    pub async fn get_rank_of(connection_maker: &impl Connector, user_id: UserId) -> DbResult<i64> {
+        let mut conn = connection_maker.async_connect().await?;
+        let user_record = Self::load_for(connection_maker, user_id).await;
         let victory_fourths = user_record.as_ref().map(|r| r.victory_fourths.clone()).unwrap_or_default();
         let usage = user_record.as_ref().map(|r| r.updated).unwrap_or(Utc::now() + Duration::milliseconds(100));
-        schema::naval_victory_counts::table
+        Ok(schema::naval_victory_counts::table
             .filter(
                 schema::naval_victory_counts::updated.lt(usage)
                     .and(schema::naval_victory_counts::victory_fourths.gt(victory_fourths))
             )
             .select(diesel::dsl::count(schema::naval_victory_counts::id))
             .get_result::<i64>(&mut conn)
+            .await?)
     }
 
-    pub fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::naval_victory_counts::table
+    pub async fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::naval_victory_counts::table
             .order((schema::naval_victory_counts::victory_fourths.desc(), schema::naval_victory_counts::updated))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
+            .await?)
     }
 
-    pub fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::naval_victory_counts::table
+    pub async fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::naval_victory_counts::table
             .order((schema::naval_victory_counts::victory_fourths, schema::naval_victory_counts::updated.desc()))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
+            .await?)
     }
 
-    pub fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
-        let mut conn = connection_maker.connect();
+    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+        let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         let data = diesel::delete(
             schema::naval_victory_counts::table
                 .filter(schema::naval_victory_counts::id.eq_any(ids))
-        ).get_results::<Self>(&mut conn).map_err(AdjustmentError::Change)?;
+        ).get_results::<Self>(&mut conn).await.map_err(AdjustmentError::Change)?;
         let deleted_record_count = data.len();
 
         // write changes back to db
@@ -131,6 +139,7 @@ impl NavalVictoryCount {
                 victory_fourths,
             }).collect::<Vec<_>>())
             .execute(&mut conn)
+            .await
             .map_err(AdjustmentError::Count)?;
 
         Ok(deleted_record_count)
@@ -158,21 +167,23 @@ pub struct NavalTackleAssistCount {
 
 
 impl NavalTackleAssistCount {
-    pub fn load_for(connection_maker: &impl Connector, user: UserId) -> Option<Self> {
-        let mut conn = connection_maker.connect();
+    pub async fn load_for(connection_maker: &impl Connector, user: UserId) -> Option<Self> {
+        let mut conn = connection_maker.async_connect().await.ok()?;
         let id: u64 = user.into();
         schema::naval_tackle_assist_counts::table
             .filter(schema::naval_tackle_assist_counts::id.eq(BigDecimal::from(id)))
             .get_result(&mut conn)
+            .await
             .optional()
             .expect("query to be fine")
     }
 
-    pub fn adjust_count(connection_maker: &impl Connector, change: NewNavalTackleAssistCountChange) -> Result<BigDecimal, AdjustmentError> {
-        let mut conn = connection_maker.connect();
+    pub async fn adjust_count(connection_maker: &impl Connector, change: NewNavalTackleAssistCountChange) -> Result<BigDecimal, AdjustmentError> {
+        let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         diesel::insert_into(schema::naval_tackle_assist_count_changes::table)
             .values(&change)
             .execute(&mut conn)
+            .await
             .map_err(AdjustmentError::Change)?;
         diesel::insert_into(schema::naval_tackle_assist_counts::table)
             .values((
@@ -194,52 +205,56 @@ impl NavalTackleAssistCount {
             ))
             .returning(schema::naval_tackle_assist_counts::tackle_assists)
             .get_result(&mut conn)
+            .await
             .map_err(AdjustmentError::Count)
     }
 
-    pub fn count_rows(connection_maker: &impl Connector) -> Result<i64, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::naval_tackle_assist_counts::table.count().get_result(&mut conn)
+    pub async fn count_rows(connection_maker: &impl Connector) -> DbResult<i64> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::naval_tackle_assist_counts::table.count().get_result(&mut conn).await?)
     }
 
-    pub fn get_rank_of(connection_maker: &impl Connector, user_id: UserId) -> Result<i64, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        let user_record = Self::load_for(connection_maker, user_id);
+    pub async fn get_rank_of(connection_maker: &impl Connector, user_id: UserId) -> DbResult<i64> {
+        let mut conn = connection_maker.async_connect().await?;
+        let user_record = Self::load_for(connection_maker, user_id).await;
         let tackle_assists = user_record.as_ref().map(|r| r.tackle_assists.clone()).unwrap_or_default();
         let usage = user_record.as_ref().map(|r| r.updated).unwrap_or(Utc::now() + Duration::milliseconds(100));
-        schema::naval_tackle_assist_counts::table
+        Ok(schema::naval_tackle_assist_counts::table
             .filter(
                 schema::naval_tackle_assist_counts::updated.lt(usage)
                     .and(schema::naval_tackle_assist_counts::tackle_assists.gt(tackle_assists))
             )
             .select(diesel::dsl::count(schema::naval_tackle_assist_counts::id))
             .get_result::<i64>(&mut conn)
+            .await?)
     }
 
-    pub fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::naval_tackle_assist_counts::table
+    pub async fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::naval_tackle_assist_counts::table
             .order((schema::naval_tackle_assist_counts::tackle_assists.desc(), schema::naval_tackle_assist_counts::updated))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
+            .await?)
     }
 
-    pub fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::naval_tackle_assist_counts::table
+    pub async fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::naval_tackle_assist_counts::table
             .order((schema::naval_tackle_assist_counts::tackle_assists, schema::naval_tackle_assist_counts::updated.desc()))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
+            .await?)
     }
 
-    pub fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
-        let mut conn = connection_maker.connect();
+    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+        let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         let data = diesel::delete(
             schema::naval_tackle_assist_counts::table
                 .filter(schema::naval_tackle_assist_counts::id.eq_any(ids))
-        ).get_results::<Self>(&mut conn).map_err(AdjustmentError::Change)?;
+        ).get_results::<Self>(&mut conn).await.map_err(AdjustmentError::Change)?;
         let deleted_record_count = data.len();
 
         // write changes back to db
@@ -250,6 +265,7 @@ impl NavalTackleAssistCount {
                 tackle_assists,
             }).collect::<Vec<_>>())
             .execute(&mut conn)
+            .await
             .map_err(AdjustmentError::Count)?;
 
         Ok(deleted_record_count)

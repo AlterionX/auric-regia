@@ -3,7 +3,9 @@ use bigdecimal::ToPrimitive;
 
 use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedValue, UserId};
 
-use crate::{cmd::RequestError, db, discord::ExecutionContext};
+use azel::discord::ExecutionContext;
+
+use crate::{cmd::RequestError, db};
 
 #[derive(Debug)]
 pub struct Request {
@@ -55,7 +57,7 @@ impl Request {
             tackle_assists: self.tackle_assists.into(),
         };
 
-        let final_tackle_assists = match db::NavalTackleAssistCount::adjust_count(&ctx.db_cfg, change) {
+        let final_tackle_assists = match db::NavalTackleAssistCount::adjust_count(&ctx.db_cfg, change).await {
             Ok(v) => v.to_i64().unwrap_or(0),
             Err(e) => {
                 trc::error!("Failed to update count for navy tackle assist record. err={e:?}");

@@ -3,7 +3,9 @@ use bigdecimal::ToPrimitive;
 
 use serenity::all::{CommandInteraction, Mention, ResolvedOption, ResolvedTarget, ResolvedValue, UserId};
 
-use crate::{cmd::RequestError, db, discord::ExecutionContext};
+use azel::discord::ExecutionContext;
+
+use crate::{cmd::RequestError, db};
 
 #[derive(Debug)]
 pub struct Request {
@@ -71,7 +73,7 @@ impl Request {
             victory_fourths: self.victory_fourths.into(),
         };
 
-        let final_victories = match db::NavalVictoryCount::adjust_count(&ctx.db_cfg, change) {
+        let final_victories = match db::NavalVictoryCount::adjust_count(&ctx.db_cfg, change).await {
             Ok(v) => v.to_i64().unwrap_or(0) as f64 / 4.,
             Err(e) => {
                 trc::error!("Failed to update count for navy victory record. err={e:?}");

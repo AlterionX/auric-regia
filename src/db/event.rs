@@ -2,11 +2,12 @@ use std::ops::Add;
 
 use bigdecimal::BigDecimal;
 use chrono::{Duration, Utc};
-use diesel::prelude::*;
+use diesel::{BoolExpressionMethods, ConnectionError, ExpressionMethods, OptionalExtension, QueryDsl, prelude::{Identifiable, Insertable, Queryable}};
+use diesel_async::RunQueryDsl;
 use serenity::all::UserId;
-use crate::schema::{self, event_participation_counts};
+use crate::schema;
 
-use super::Connector;
+use azel::db::{Connector, DbResult};
 
 #[derive(Debug, Clone)]
 #[derive(Insertable)]
@@ -35,26 +36,30 @@ diesel::define_sql_function! {
 
 #[derive(Debug, PartialEq)]
 pub enum AdjustmentError {
+    Connect(ConnectionError),
     Change(diesel::result::Error),
     Count(diesel::result::Error),
 }
 
 impl EventParticipationCount {
-    pub fn load_for(connection_maker: &impl Connector, user: UserId) -> Option<Self> {
-        let mut conn = connection_maker.connect();
+    pub async fn load_for(connection_maker: &impl Connector, user: UserId) -> Option<Self> {
+        let mut conn = connection_maker.async_connect().await.ok()?;
         let id: u64 = user.into();
         schema::event_participation_counts::table
             .filter(schema::event_participation_counts::id.eq(BigDecimal::from(id)))
             .get_result(&mut conn)
+            .await
             .optional()
             .expect("query to be fine")
     }
 
-    pub fn adjust_count(connection_maker: &impl Connector, change: NewEventParticipationCountChange) -> Result<BigDecimal, AdjustmentError> {
-        let mut conn = connection_maker.connect();
+    pub async fn adjust_count(connection_maker: &impl Connector, change: NewEventParticipationCountChange) -> Result<BigDecimal, AdjustmentError> {
+        let mut conn = connection_maker.async_connect().await
+            .map_err(AdjustmentError::Connect)?;
         diesel::insert_into(schema::event_participation_count_changes::table)
             .values(&change)
             .execute(&mut conn)
+            .await
             .map_err(AdjustmentError::Change)?;
         diesel::insert_into(schema::event_participation_counts::table)
             .values((
@@ -76,44 +81,48 @@ impl EventParticipationCount {
             ))
             .returning(schema::event_participation_counts::event_participation)
             .get_result(&mut conn)
+            .await
             .map_err(AdjustmentError::Count)
     }
 
-    pub fn count_rows(connection_maker: &impl Connector) -> Result<i64, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::event_participation_counts::table.count().get_result(&mut conn)
+    pub async fn count_rows(connection_maker: &impl Connector) -> DbResult<i64> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::event_participation_counts::table.count().get_result(&mut conn).await?)
     }
 
-    pub fn get_rank_of(connection_maker: &impl Connector, user_id: UserId) -> Result<i64, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        let user_record = Self::load_for(connection_maker, user_id);
+    pub async fn get_rank_of(connection_maker: &impl Connector, user_id: UserId) -> DbResult<i64> {
+        let mut conn = connection_maker.async_connect().await?;
+        let user_record = Self::load_for(connection_maker, user_id).await;
         let event_participation = user_record.as_ref().map(|r| r.event_participation.clone()).unwrap_or_default();
         let usage = user_record.as_ref().map(|r| r.updated).unwrap_or(Utc::now() + Duration::milliseconds(100));
-        schema::event_participation_counts::table
+        Ok(schema::event_participation_counts::table
             .filter(
                 schema::event_participation_counts::updated.lt(usage)
                     .and(schema::event_participation_counts::event_participation.gt(event_participation))
             )
-            .select(diesel::dsl::count(event_participation_counts::id))
+            .select(diesel::dsl::count(schema::event_participation_counts::id))
             .get_result::<i64>(&mut conn)
+            .await?)
     }
 
-    pub fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::event_participation_counts::table
-            .order((event_participation_counts::event_participation.desc(), event_participation_counts::updated))
+    pub async fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::event_participation_counts::table
+            .order_by((schema::event_participation_counts::event_participation.desc(), schema::event_participation_counts::updated))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
+            .await?)
     }
 
-    pub fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> Result<Vec<Self>, diesel::result::Error> {
-        let mut conn = connection_maker.connect();
-        schema::event_participation_counts::table
-            .order((event_participation_counts::event_participation, event_participation_counts::updated.desc()))
+    pub async fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+        Ok(schema::event_participation_counts::table
+            .order_by((schema::event_participation_counts::event_participation, schema::event_participation_counts::updated.desc()))
             .offset(start)
             .limit(lim)
             .get_results(&mut conn)
+            .await?)
     }
 }
 

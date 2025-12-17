@@ -2,7 +2,9 @@ use bigdecimal::ToPrimitive;
 use serenity::all::{CommandInteraction, Mentionable, ResolvedOption, ResolvedTarget, ResolvedValue, UserId};
 use tracing as trc;
 
-use crate::{cmd::RequestError, db, discord::ExecutionContext};
+use azel::discord::ExecutionContext;
+
+use crate::{cmd::RequestError, db};
 
 #[derive(Debug)]
 pub struct Request(UserId);
@@ -39,7 +41,7 @@ impl Request {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
-        let display_victories = db::NavalVictoryCount::load_for(&ctx.db_cfg, self.0).map(|n| n.victory_fourths.to_i64().unwrap_or(0) as f64 / 4.).unwrap_or(0.);
+        let display_victories = db::NavalVictoryCount::load_for(&ctx.db_cfg, self.0).await.map(|n| n.victory_fourths.to_i64().unwrap_or(0) as f64 / 4.).unwrap_or(0.);
         ctx.reply_restricted(format!("We have {display_victories} victories recorded for {}.", self.0.mention())).await
     }
 }
