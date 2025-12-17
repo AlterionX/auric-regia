@@ -2,7 +2,7 @@ CREATE TABLE monthly_goals (
     id BIGSERIAL PRIMARY KEY,
     created TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     updater NUMERIC NOT NULL,
-    tag VARCHAR(100),
-    header VARCHAR(256),
-    body VARCHAR(4096)
+    tag VARCHAR(100) NOT NULL,
+    header VARCHAR(256) NOT NULL,
+    body VARCHAR(4096) NOT NULL
 );

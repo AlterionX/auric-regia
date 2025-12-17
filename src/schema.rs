@@ -65,11 +65,11 @@ diesel::table! {
         created -> Timestamptz,
         updater -> Numeric,
         #[max_length = 100]
-        tag -> Nullable<Varchar>,
+        tag -> Varchar,
         #[max_length = 256]
-        header -> Nullable<Varchar>,
+        header -> Varchar,
         #[max_length = 4096]
-        body -> Nullable<Varchar>,
+        body -> Varchar,
     }
 }
 
