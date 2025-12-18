@@ -1191,6 +1191,17 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
                 },
             ],
         },
+        CommandTreeTop::Complex {
+            name: "monthly_goal",
+            description: "Commands for managing monthly goals",
+            kind: CommandType::ChatInput,
+            opt_default_perm: None,
+            subcommands: vec![
+                RequestKind::MonthlyGoalSet,
+                RequestKind::MonthlyGoalCheck,
+            ],
+            subcommand_groups: vec![],
+        },
     ]
 }
 
