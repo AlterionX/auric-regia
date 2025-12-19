@@ -672,6 +672,16 @@ impl DiscordCommandDescriptor for RequestKind {
             },
             RequestKind::MonthlyGoalSet => {
                 vec![
+                    RawCommandOptionEntry::String {
+                        name: "header",
+                        description: "Header of the message, as of 2025/12/16 max 100 chars",
+                        required: true,
+                    },
+                    RawCommandOptionEntry::String {
+                        name: "body",
+                        description: "Body of the message, as of 2025/12/16 max 5000 chars",
+                        required: true,
+                    },
                     RawCommandOptionEntry::StringSelect {
                         name: "branch",
                         description: "Which branch to set the goal for, or the org",
@@ -682,16 +692,6 @@ impl DiscordCommandDescriptor for RequestKind {
                             ("Legion", "legion"),
                             ("Industry", "industry"),
                         ],
-                    },
-                    RawCommandOptionEntry::String {
-                        name: "header",
-                        description: "Header of the message, as of 2025/12/16 max 100 chars",
-                        required: true,
-                    },
-                    RawCommandOptionEntry::String {
-                        name: "body",
-                        description: "Body of the message, as of 2025/12/16 max 5000 chars",
-                        required: true,
                     },
                 ]
             },
@@ -939,32 +939,27 @@ impl DiscordCommandDescriptor for RequestKind {
                     },
                 }
             },
-            "monthly goal" => {
+            "monthly_goal" => {
                 let tier0_options: Vec<ResolvedOption<'a>> = cmd.data.options();
                 let Some(tier1) = tier0_options.first() else {
                     return Err(RequestError::Internal("Missing options for `monthly_goal`.".into()));
                 };
                 match tier1.name {
-                    "kill" => {
+                    "set" => {
                         let ResolvedValue::SubCommand(ref tier1_options) = tier1.value else {
-                            return Err(RequestError::Internal("Missing subcommand for `monthly_goal`".into()));
+                            return Err(RequestError::Internal("Missing options for `monthly_goal set`".into()));
                         };
-                        match tier1.name {
-                            "set" => {
-                                Ok(RequestArgs::MonthlyGoalSet(monthly_goal::set::Request::parse(cmd, tier1_options.as_slice())?))
-                            },
-                            "check" => {
-                                Ok(RequestArgs::MonthlyGoalCheck(monthly_goal::check::Request::parse(cmd, tier1_options.as_slice())?))
-                            },
-                            _ => {
-                                trc::warn!("Unknown subcommand {:?}", tier1);
-                                Err(RequestError::Internal("Unknown subcommand for `legion kill`".into()))
-                            },
-                        }
+                        Ok(RequestArgs::MonthlyGoalSet(monthly_goal::set::Request::parse(cmd, tier1_options.as_slice())?))
+                    },
+                    "check" => {
+                        let ResolvedValue::SubCommand(ref tier1_options) = tier1.value else {
+                            return Err(RequestError::Internal("Missing options for `monthly_goal check`".into()));
+                        };
+                        Ok(RequestArgs::MonthlyGoalCheck(monthly_goal::check::Request::parse(cmd, tier1_options.as_slice())?))
                     },
                     _ => {
                         trc::warn!("Unknown subcommand {:?}", tier1);
-                        Err(RequestError::Internal("Unknown subcommand for `legion`".into()))
+                        Err(RequestError::Internal("Unknown subcommand for `legion kill`".into()))
                     },
                 }
             },
