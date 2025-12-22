@@ -40,7 +40,7 @@ impl<'a> Request<'a> {
         };
 
         match opt_data {
-            Some(data) => ctx.reply_restricted(format!("[{} goal] _*{}*_\n{}", data.tag, data.header, data.body)).await?,
+            Some(data) => ctx.reply_restricted(format!("# {}\n\n{}", data.tag, data.header, data.body)).await?,
             None => ctx.reply_restricted("No goal set!".into()).await?,
         }
 
