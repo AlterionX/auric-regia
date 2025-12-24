@@ -70,6 +70,10 @@ diesel::table! {
         header -> Varchar,
         #[max_length = 4096]
         body -> Varchar,
+        progress -> Int2,
+        #[max_length = 50]
+        shortname -> Varchar,
+        active -> Bool,
     }
 }
 
