@@ -68,3 +68,5 @@ path = "../azel"
 version = "0.1"
 features = ["test-utils"]
 
+[dependencies.progrs-bar]
+version = "0.1"
