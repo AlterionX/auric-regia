@@ -50,6 +50,7 @@ impl MonthlyGoal {
             .values(new.clone())
             .on_conflict(schema::monthly_goals::shortname)
             .do_update()
+            // .filter(schema::monthly_goals::active)
             .set(&MonthlyGoalUpdate {
                 header: new.header,
                 body: new.body,
@@ -70,5 +71,17 @@ impl MonthlyGoal {
             .get_result(&mut conn)
             .await
             .optional()?)
+    }
+
+    pub async fn clear_active(connection_maker: &impl Connector) -> DbResult<()> {
+        let mut conn = connection_maker.async_connect().await?;
+
+        diesel::update(schema::monthly_goals::table)
+            .set(schema::monthly_goals::active.eq(false))
+            .filter(schema::monthly_goals::active)
+            .execute(&mut conn)
+            .await?;
+
+        Ok(())
     }
 }

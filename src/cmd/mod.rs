@@ -61,6 +61,8 @@ pub enum RequestArgs<'a> {
 
     MonthlyGoalCheck(monthly_goal::check::Request<'a>),
     MonthlyGoalSet(monthly_goal::set::Request<'a>),
+    MonthlyGoalClear(monthly_goal::clear::Request),
+    MonthlyGoalAdminList(monthly_goal::admin_list::Request<'a>),
 }
 
 impl DiscordCommandDescriptor for RequestKind {
@@ -175,6 +177,12 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::MonthlyGoalSet => {
                 "set"
             },
+            RequestKind::MonthlyGoalClear => {
+                "clear"
+            },
+            RequestKind::MonthlyGoalAdminList => {
+                "admin_list"
+            },
         }
     }
 
@@ -286,6 +294,12 @@ impl DiscordCommandDescriptor for RequestKind {
             },
             RequestKind::MonthlyGoalSet => {
                 "Check the monthly goal for the org or a branch"
+            },
+            RequestKind::MonthlyGoalClear => {
+                "Clear all monthly goals"
+            },
+            RequestKind::MonthlyGoalAdminList => {
+                "List out goals including shortnames"
             },
         }
     }
@@ -673,14 +687,24 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::MonthlyGoalSet => {
                 vec![
                     RawCommandOptionEntry::String {
+                        name: "shorname",
+                        description: "Name for the goal. If active doesn't exist, will create",
+                        required: true,
+                    },
+                    RawCommandOptionEntry::Integer {
+                        name: "progress",
+                        description: "Progress of the goal, up to 100",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::String {
                         name: "header",
                         description: "Header of the message, as of 2025/12/16 max 100 chars",
-                        required: true,
+                        required: false,
                     },
                     RawCommandOptionEntry::String {
                         name: "body",
                         description: "Body of the message, as of 2025/12/16 max 5000 chars",
-                        required: true,
+                        required: false,
                     },
                     RawCommandOptionEntry::StringSelect {
                         name: "branch",
@@ -692,6 +716,18 @@ impl DiscordCommandDescriptor for RequestKind {
                             ("Legion", "legion"),
                             ("Industry", "industry"),
                         ],
+                    },
+                ]
+            },
+            RequestKind::MonthlyGoalClear => {
+                vec![]
+            },
+            RequestKind::MonthlyGoalAdminList => {
+                vec![
+                    RawCommandOptionEntry::String {
+                        name: "shorname",
+                        description: "Name for the goal. will get all if not provided",
+                        required: false,
                     },
                 ]
             },
@@ -957,6 +993,18 @@ impl DiscordCommandDescriptor for RequestKind {
                         };
                         Ok(RequestArgs::MonthlyGoalCheck(monthly_goal::check::Request::parse(cmd, tier1_options.as_slice())?))
                     },
+                    "clear" => {
+                        let ResolvedValue::SubCommand(ref tier1_options) = tier1.value else {
+                            return Err(RequestError::Internal("Missing options for `monthly_goal check`".into()));
+                        };
+                        Ok(RequestArgs::MonthlyGoalClear(monthly_goal::clear::Request::parse(cmd, tier1_options.as_slice())?))
+                    },
+                    "admin_list" => {
+                        let ResolvedValue::SubCommand(ref tier1_options) = tier1.value else {
+                            return Err(RequestError::Internal("Missing options for `monthly_goal check`".into()));
+                        };
+                        Ok(RequestArgs::MonthlyGoalAdminList(monthly_goal::admin_list::Request::parse(cmd, tier1_options.as_slice())?))
+                    },
                     _ => {
                         trc::warn!("Unknown subcommand {:?}", tier1);
                         Err(RequestError::Internal("Unknown subcommand for `legion kill`".into()))
@@ -1073,6 +1121,12 @@ impl <'a> DiscordCommandArgs for RequestArgs<'a> {
                 req.execute(ctx).await
             },
             RequestArgs::MonthlyGoalSet(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::MonthlyGoalClear(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::MonthlyGoalAdminList(req) => {
                 req.execute(ctx).await
             },
         }

@@ -7,18 +7,36 @@ use crate::{cmd::RequestError, db};
 
 #[derive(Debug)]
 pub struct Request<'a> {
+    shortname: &'a str,
     branch: &'a str,
-    header: &'a str,
-    body: &'a str,
+    header: Option<&'a str>,
+    body: Option<&'a str>,
+    progress: Option<i16>,
 }
 
 impl <'a> Request<'a> {
     pub fn parse(_cmd: &CommandInteraction, options: &'_ [ResolvedOption<'a>]) -> Result<Self, RequestError> {
+        let mut shortname = None;
+        let mut branch = "main";
         let mut header = None;
         let mut body = None;
-        let mut branch = "main";
+        let mut progress = None;
         for opt in options {
             match opt.name {
+                "shortname" => {
+                    let ResolvedValue::String(u) = opt.value else {
+                        trc::error!("Bad value for `shortname` in `monthly_goal set` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `shortname` in `monthly_goal set`.".into()));
+                    };
+                    shortname = Some(u);
+                }
+                "branch" => {
+                    let ResolvedValue::String(u) = opt.value else {
+                        trc::error!("Bad value for `branch` in `monthly_goal set` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `branch` in `monthly_goal set`.".into()));
+                    };
+                    branch = u;
+                }
                 "header" => {
                     let ResolvedValue::String(u) = opt.value else {
                         trc::error!("Bad value for `header` in `monthly_goal set` {:?}", opt);
@@ -29,16 +47,24 @@ impl <'a> Request<'a> {
                 "body" => {
                     let ResolvedValue::String(u) = opt.value else {
                         trc::error!("Bad value for `body` in `monthly_goal set` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `body` in `monthly_goal check`.".into()));
+                        return Err(RequestError::Internal("Bad value for `body` in `monthly_goal set`.".into()));
                     };
                     body = Some(u);
                 }
-                "branch" => {
-                    let ResolvedValue::String(u) = opt.value else {
-                        trc::error!("Bad value for `branch` in `monthly_goal set` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `branch` in `monthly_goal set`.".into()));
+                "progress" => {
+                    let ResolvedValue::Integer(u) = opt.value else {
+                        trc::error!("Bad value for `progress` in `monthly_goal set` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `progress` in `monthly_goal set`.".into()));
                     };
-                    branch = u;
+                    let Ok(u) = i16::try_from(u) else {
+                        trc::error!("Out of range (1 - 100) value for `progress` in `monthly_goal set` {:?}", opt);
+                        return Err(RequestError::Internal("Out of range (1 - 100) value for `progress` in `monthly_goal set` {:?}".into()));
+                    };
+                    if u > 100 || u < 0 {
+                        trc::error!("Out of range (0 - 100) value for `progress` in `monthly_goal set` {:?}", opt);
+                        return Err(RequestError::Internal("Out of range (1 - 100) value for `progress` in `monthly_goal set` {:?}".into()));
+                    };
+                    progress = Some(u);
                 }
                 _ => {
                     trc::error!("Unknown option `{}` for `monthly_goal set`", opt.name);
@@ -47,28 +73,28 @@ impl <'a> Request<'a> {
             }
         }
 
-        let Some(header) = header else {
-            trc::error!("Missing value for `header` in `monthly_goal set`");
-            return Err(RequestError::Internal("Missing value for `header` in `monthly goal check`.".into()));
-        };
-        let Some(body) = body else {
-            trc::error!("Missing value for `body` in `monthly_goal set`");
-            return Err(RequestError::Internal("Missing value for `body` in `monthly goal check`.".into()));
+        let Some(shortname) = shortname else {
+            trc::error!("Missing value for `shortname` in `monthly_goal set`");
+            return Err(RequestError::Internal("Missing value for `shortname` in `monthly goal check`.".into()));
         };
 
         Ok(Self {
+            shortname,
             branch,
             header,
-            body
+            body,
+            progress,
         })
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
-        let Ok(_) = db::MonthlyGoal::create(&ctx.db_cfg, db::NewMonthlyGoal {
+        let Ok(_) = db::MonthlyGoal::upsert(&ctx.db_cfg, db::NewMonthlyGoal {
             updater: u64::from(ctx.cmd.user.id).into(),
+            shortname: self.shortname,
             tag: self.branch,
             header: self.header,
             body: self.body,
+            progress: self.progress,
         }).await else {
             return Err(RequestError::Internal("Failure to write".into()));
         };
