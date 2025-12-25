@@ -1248,6 +1248,8 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
             subcommands: vec![
                 RequestKind::MonthlyGoalSet,
                 RequestKind::MonthlyGoalCheck,
+                RequestKind::MonthlyGoalClear,
+                RequestKind::MonthlyGoalAdminList,
             ],
             subcommand_groups: vec![],
         },
