@@ -58,15 +58,17 @@ impl<'a> Request<'a> {
         let total_possible_progress = branch_data.iter().map(|(_branch, (_progress, total_progress))| *total_progress)
             .map(|progress| usize::try_from(progress).unwrap_or(0))
             .chain(std::iter::once(100 * main_data.len()))
-            .sum();
+            .sum::<usize>()
+            .min(1);
 
         let msg: String = std::iter::once(format!(
             "\
                 # Goal Progress: Main\n\
                 \n\
-                Progress: ```{}```\n\
+                Progress ({}%): ```ansi\n{}\n```\n\
                 \n\
             ",
+            (all_progress as f64 / total_possible_progress as f64).clamp(0., 1.) * 100.,
             progrs_bar::Bar::new(all_progress, total_possible_progress).generate_string(25, fetch_branch_color("main"))
         ))
             .chain(branch_data.into_iter().map(|(branch_name, (branch_progress, branch_total_progress))| {
@@ -74,13 +76,14 @@ impl<'a> Request<'a> {
                     "\
                         ## {}\n\
                         \n\
-                        Progress: ```{}```\n\
+                        Progress ({}%): ```ansi\n{}\n```\n\
                         \n\
                     ",
                     branch_name,
+                    (branch_progress as f64 / branch_total_progress.max(1) as f64).clamp(0., 1.) * 100.,
                     progrs_bar::Bar::new(
                         usize::try_from(branch_progress).unwrap_or(0),
-                        usize::try_from(branch_total_progress).unwrap_or(1),
+                        usize::try_from(branch_total_progress.max(1)).unwrap_or(1),
                     ).generate_string(25, fetch_branch_color(branch_name.as_str())),
                 )
             }))
@@ -90,11 +93,12 @@ impl<'a> Request<'a> {
                         ## {}\n\
                         {}\n\
                         \n\
-                        Progress: ```{}```\n\
+                        Progress ({}%): ```ansi\n{}\n```\n\
                         \n\
                     ",
                     goal.header,
                     goal.body,
+                    goal.progress as f64,
                     progrs_bar::Bar::new(usize::try_from(goal.progress).unwrap_or(0), 100).generate_string(25, fetch_branch_color(goal.tag.as_str())),
                 )
             }))
@@ -122,11 +126,12 @@ impl<'a> Request<'a> {
                         ## {}\n\
                         {}\n\
                         \n\
-                        Progress: ```{}```\n\
+                        Progress ({}%): ```ansi\n{}\n```\n\
                         \n\
                     ",
                     goal.header,
                     goal.body,
+                    goal.progress as f64,
                     progrs_bar::Bar::new(usize::try_from(goal.progress).unwrap_or(0), 100).generate_string(25, branch_color),
                 )
             }))
