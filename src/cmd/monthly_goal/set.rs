@@ -60,7 +60,7 @@ impl <'a> Request<'a> {
                         trc::error!("Out of range (1 - 100) value for `progress` in `monthly_goal set` {:?}", opt);
                         return Err(RequestError::Internal("Out of range (1 - 100) value for `progress` in `monthly_goal set` {:?}".into()));
                     };
-                    if u > 100 || u < 0 {
+                    if !(0..=100).contains(&u) {
                         trc::error!("Out of range (0 - 100) value for `progress` in `monthly_goal set` {:?}", opt);
                         return Err(RequestError::Internal("Out of range (1 - 100) value for `progress` in `monthly_goal set` {:?}".into()));
                     };

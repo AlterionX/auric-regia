@@ -725,8 +725,8 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::MonthlyGoalAdminList => {
                 vec![
                     RawCommandOptionEntry::String {
-                        name: "shorname",
-                        description: "Name for the goal. will get all if not provided",
+                        name: "branch",
+                        description: "Tag of the goal. will get all if not provided",
                         required: false,
                     },
                 ]

@@ -7,20 +7,20 @@ use crate::{cmd::RequestError, db};
 
 #[derive(Debug)]
 pub struct Request<'a> {
-    shortname: Option<&'a str>
+    branch: Option<&'a str>
 }
 
 impl <'a> Request<'a> {
     pub fn parse(_cmd: &'a CommandInteraction, options: &'_ [ResolvedOption<'a>]) -> Result<Self, RequestError> {
-        let mut shortname = None;
+        let mut branch = None;
         for opt in options {
             match opt.name {
-                "shortname" => {
+                "branch" => {
                     let ResolvedValue::String(u) = opt.value else {
-                        trc::error!("Bad value for `shortname` in `monthly_goal set` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `shortname` in `monthly_goal set`.".into()));
+                        trc::error!("Bad value for `branch` in `monthly_goal set` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `branch` in `monthly_goal set`.".into()));
                     };
-                    shortname = Some(u);
+                    branch = Some(u);
                 }
                 _ => {
                     trc::error!("Unknown option `{}` for `monthly_goal set`", opt.name);
@@ -30,12 +30,23 @@ impl <'a> Request<'a> {
         }
 
         Ok(Self {
-            shortname,
+            branch,
         })
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
-        ctx.reply_restricted(format!("")).await?;
+        let goals = if let Some(branch) = self.branch {
+            db::MonthlyGoal::load_for_branch(&ctx.db_cfg, branch).await
+        } else {
+            db::MonthlyGoal::load_all(&ctx.db_cfg).await
+        };
+
+        let Ok(goals) = goals else {
+            return Err(RequestError::Internal("Failed to load monthly goals.".into()));
+        };
+
+        let msg = goals.iter().map(|goal| format!("{} {}", goal.shortname, goal.progress)).collect::<Vec<_>>().join("\n- ");
+        ctx.reply_restricted(msg).await?;
 
         Ok(())
     }

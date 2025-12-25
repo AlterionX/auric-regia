@@ -17,7 +17,7 @@ impl Request {
             return Err(RequestError::Internal("Failure to write".into()));
         };
 
-        ctx.reply_restricted(format!("Monthly goals cleared.")).await?;
+        ctx.reply_restricted("Monthly goals cleared.".into()).await?;
 
         Ok(())
     }
