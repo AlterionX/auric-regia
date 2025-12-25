@@ -51,7 +51,7 @@ impl MonthlyGoal {
         diesel::insert_into(schema::monthly_goals::table)
             .values(new.clone())
             .on_conflict(schema::monthly_goals::shortname)
-            .filter_target(schema::monthly_goals::disabled.is_not_null())
+            .filter_target(schema::monthly_goals::disabled.is_null())
             .do_update()
             .set(&MonthlyGoalUpdate {
                 header: new.header,
