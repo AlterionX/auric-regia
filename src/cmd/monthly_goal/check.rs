@@ -47,19 +47,23 @@ impl<'a> Request<'a> {
             return Err(RequestError::Internal("Failed to load monthly goals.".into()));
         };
 
-        let Ok(branch_data) = db::MonthlyGoal::load_primary_summary(&ctx.db_cfg).await else {
+        let Ok(mut branch_data) = db::MonthlyGoal::load_primary_summary(&ctx.db_cfg).await else {
             return Err(RequestError::Internal("Failed to load monthly goals.".into()));
         };
+        // We're calculating this on the side, ignore any values from the db for this.
+        branch_data.remove("main");
+        let branch_data = branch_data;
 
-        let all_progress = main_data.iter().map(|goal| i64::from(goal.progress))
-            .chain(branch_data.iter().map(|(_branch, (progress, _total_progress))| *progress))
-            .map(|progress| usize::try_from(progress).unwrap_or(0))
+        let all_progress = main_data.iter().map(|goal| goal.progress as f64)
+            .chain(branch_data.iter().map(|(_branch, (progress, total_progress))| 100. * (*progress as f64 / *total_progress as f64)))
+            .map(|progress| progress.min(100.) as usize)
             .sum();
-        let total_possible_progress = branch_data.iter().map(|(_branch, (_progress, total_progress))| *total_progress)
-            .map(|progress| usize::try_from(progress).unwrap_or(0))
-            .chain(std::iter::once(100 * main_data.len()))
-            .sum::<usize>()
-            .min(1);
+        let total_possible_progress = 100 * (main_data.len() + branch_data.len());
+
+        if total_possible_progress == 0 {
+            ctx.reply_restricted("No goals have been set up!".to_owned()).await?;
+            return Ok(());
+        }
 
         let msg: String = std::iter::once(format!(
             "\
@@ -69,7 +73,7 @@ impl<'a> Request<'a> {
                 \n\
             ",
             (all_progress as f64 / total_possible_progress as f64).clamp(0., 1.) * 100.,
-            progrs_bar::Bar::new(all_progress, total_possible_progress).generate_string(25, fetch_branch_color("main"))
+            progrs_bar::Bar::new(all_progress, total_possible_progress.max(1)).generate_string(25, fetch_branch_color("main"))
         ))
             .chain(branch_data.into_iter().map(|(branch_name, (branch_progress, branch_total_progress))| {
                 format!(
