@@ -7,4 +7,4 @@ UPDATE monthly_goals SET shortname = CAST(id AS VARCHAR(50));
 
 ALTER TABLE monthly_goals ALTER COLUMN shortname SET NOT NULL;
 
-CREATE UNIQUE INDEX monthly_goal_unique_active_shortname ON monthly_goals (shortname) WHERE disabled IS NOT NULL;
+CREATE UNIQUE INDEX monthly_goal_unique_active_shortname ON monthly_goals (shortname) WHERE disabled IS NULL;

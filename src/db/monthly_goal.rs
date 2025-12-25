@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
-use diesel::{BoolExpressionMethods, ExpressionMethods, OptionalExtension, QueryDsl, prelude::{AsChangeset, Identifiable, Insertable, Queryable}};
+use diesel::{BoolExpressionMethods, DecoratableTarget, ExpressionMethods, OptionalExtension, QueryDsl, prelude::{AsChangeset, Identifiable, Insertable, Queryable}};
 use diesel_async::RunQueryDsl;
 use crate::schema;
 
@@ -51,8 +51,8 @@ impl MonthlyGoal {
         diesel::insert_into(schema::monthly_goals::table)
             .values(new.clone())
             .on_conflict(schema::monthly_goals::shortname)
+            .filter_target(schema::monthly_goals::disabled.is_not_null())
             .do_update()
-            // .filter(schema::monthly_goals::active)
             .set(&MonthlyGoalUpdate {
                 header: new.header,
                 body: new.body,

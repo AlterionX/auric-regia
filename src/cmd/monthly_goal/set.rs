@@ -88,15 +88,18 @@ impl <'a> Request<'a> {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
-        let Ok(_) = db::MonthlyGoal::upsert(&ctx.db_cfg, db::NewMonthlyGoal {
+        match db::MonthlyGoal::upsert(&ctx.db_cfg, db::NewMonthlyGoal {
             updater: u64::from(ctx.cmd.user.id).into(),
             shortname: self.shortname,
             tag: self.branch,
             header: self.header,
             body: self.body,
             progress: self.progress,
-        }).await else {
-            return Err(RequestError::Internal("Failure to write".into()));
+        }).await {
+            Ok(_) => {},
+            Err(e) => {
+                return Err(RequestError::Internal(format!("Failure to write {:?}", e).into()));
+            },
         };
 
         ctx.reply_restricted(format!("Updated monthly goal for {}", self.branch)).await?;
