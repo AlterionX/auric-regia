@@ -1,6 +1,8 @@
+use std::collections::HashMap;
+
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
-use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, prelude::{AsChangeset, Identifiable, Insertable, Queryable}, query_dsl::methods::{GroupByDsl, SelectDsl}};
+use diesel::{BoolExpressionMethods, ExpressionMethods, OptionalExtension, QueryDsl, prelude::{AsChangeset, Identifiable, Insertable, Queryable}};
 use diesel_async::RunQueryDsl;
 use crate::schema;
 
@@ -39,7 +41,7 @@ pub struct MonthlyGoal {
     pub body: String,
     pub progress: i16,
     pub shortname: String,
-    pub active: bool,
+    pub disabled: Option<DateTime<Utc>>,
 }
 
 impl MonthlyGoal {
@@ -77,23 +79,57 @@ impl MonthlyGoal {
         let mut conn = connection_maker.async_connect().await?;
 
         diesel::update(schema::monthly_goals::table)
-            .set(schema::monthly_goals::active.eq(false))
-            .filter(schema::monthly_goals::active)
+            .set(schema::monthly_goals::disabled.eq(diesel::dsl::now))
+            .filter(schema::monthly_goals::disabled.is_null())
             .execute(&mut conn)
             .await?;
 
         Ok(())
     }
 
-    pub async fn get_summary(connection_maker: &impl Connector, tag: &str) {
+    pub async fn load_primary_summary(connection_maker: &impl Connector) -> DbResult<HashMap<String, (i64, i64)>> {
         let mut conn = connection_maker.async_connect().await?;
 
-        schema::monthly_goals::table
+        let results: Vec<_> = schema::monthly_goals::table
             .group_by(schema::monthly_goals::tag)
-            .filter(shcema::monthly_goals::active)
-            .select(schema::monthly_goals::progress)
-            .group
+            .filter(schema::monthly_goals::disabled.is_null())
+            .select((
+                schema::monthly_goals::tag,
+                diesel::dsl::sum(schema::monthly_goals::progress),
+                diesel::dsl::count_star(),
+            ))
+            .get_results::<(String, Option<i64>, i64)>(&mut conn)
+            .await?;
 
-        Ok(())
+        Ok(results.into_iter().map(|(tag, progress, count)| (tag, (progress.unwrap_or(0), count))).collect())
+    }
+
+    pub async fn load_detailed_summary(connection_maker: &impl Connector, tag: &str) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+
+        let results: Vec<_> = schema::monthly_goals::table
+            .filter(
+                schema::monthly_goals::disabled.is_null()
+                .and(schema::monthly_goals::tag.eq(tag))
+            )
+            .get_results(&mut conn)
+            .await?;
+
+        Ok(results)
+    }
+
+    pub async fn load_for_branch(connection_maker: &impl Connector, branch: &str) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+
+        Ok(schema::monthly_goals::table
+            .filter(schema::monthly_goals::tag.eq(branch))
+            .get_results(&mut conn)
+            .await?)
+    }
+
+    pub async fn load_all(connection_maker: &impl Connector) -> DbResult<Vec<Self>> {
+        let mut conn = connection_maker.async_connect().await?;
+
+        Ok(schema::monthly_goals::table.get_results(&mut conn).await?)
     }
 }
