@@ -54,16 +54,16 @@ impl<'a> Request<'a> {
         branch_data.remove("main");
         let branch_data = branch_data;
 
+        if (main_data.len() + branch_data.len()) == 0 {
+            ctx.reply_restricted("No goals have been set up!".to_owned()).await?;
+            return Ok(());
+        }
+
         let all_progress = main_data.iter().map(|goal| goal.progress as f64)
             .chain(branch_data.iter().map(|(_branch, (progress, total_progress))| 100. * (*progress as f64 / *total_progress as f64)))
             .map(|progress| progress.min(100.) as usize)
             .sum();
         let total_possible_progress = 100 * (main_data.len() + branch_data.len());
-
-        if total_possible_progress == 0 {
-            ctx.reply_restricted("No goals have been set up!".to_owned()).await?;
-            return Ok(());
-        }
 
         let msg: String = std::iter::once(format!(
             "\
