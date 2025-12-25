@@ -1,4 +1,3 @@
-use diesel::IntoSql;
 use serenity::all::{CommandInteraction, ResolvedOption, ResolvedValue};
 use tracing as trc;
 
