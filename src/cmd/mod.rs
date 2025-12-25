@@ -687,7 +687,7 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::MonthlyGoalSet => {
                 vec![
                     RawCommandOptionEntry::String {
-                        name: "shorname",
+                        name: "shortname",
                         description: "Name for the goal. If active doesn't exist, will create",
                         required: true,
                     },

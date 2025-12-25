@@ -36,9 +36,9 @@ impl<'a> Request<'a> {
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
         if self.branch != "main" {
-            self.execute_main_summary(ctx).await
-        } else {
             self.execute_branch_summary(ctx).await
+        } else {
+            self.execute_main_summary(ctx).await
         }
     }
 
@@ -54,7 +54,7 @@ impl<'a> Request<'a> {
         branch_data.remove("main");
         let branch_data = branch_data;
 
-        if (main_data.len() + branch_data.len()) == 0 {
+        if main_data.len() + branch_data.len() == 0 {
             ctx.reply_restricted("No goals have been set up!".to_owned()).await?;
             return Ok(());
         }
