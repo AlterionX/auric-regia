@@ -70,3 +70,5 @@ features = ["test-utils"]
 
 [dependencies.progrs-bar]
 version = "0.1"
+[dependencies.crossterm]
+version = "0.26.1"
