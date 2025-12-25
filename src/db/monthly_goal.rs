@@ -1,6 +1,6 @@
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Utc};
-use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, prelude::{AsChangeset, Identifiable, Insertable, Queryable}};
+use diesel::{ExpressionMethods, OptionalExtension, QueryDsl, prelude::{AsChangeset, Identifiable, Insertable, Queryable}, query_dsl::methods::{GroupByDsl, SelectDsl}};
 use diesel_async::RunQueryDsl;
 use crate::schema;
 
@@ -81,6 +81,18 @@ impl MonthlyGoal {
             .filter(schema::monthly_goals::active)
             .execute(&mut conn)
             .await?;
+
+        Ok(())
+    }
+
+    pub async fn get_summary(connection_maker: &impl Connector, tag: &str) {
+        let mut conn = connection_maker.async_connect().await?;
+
+        schema::monthly_goals::table
+            .group_by(schema::monthly_goals::tag)
+            .filter(shcema::monthly_goals::active)
+            .select(schema::monthly_goals::progress)
+            .group
 
         Ok(())
     }

@@ -47,4 +47,3 @@ impl<'a> Request<'a> {
         Ok(())
     }
 }
-

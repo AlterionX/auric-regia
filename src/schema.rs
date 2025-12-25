@@ -73,7 +73,7 @@ diesel::table! {
         progress -> Int2,
         #[max_length = 50]
         shortname -> Varchar,
-        active -> Bool,
+        disabled -> Nullable<Timestamptz>,
     }
 }
 
