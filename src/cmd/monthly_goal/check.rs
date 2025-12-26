@@ -8,13 +8,31 @@ use crate::{cmd::RequestError, db};
 #[derive(Debug)]
 pub struct Request<'a> {
     branch: &'a str,
+    show_details: bool,
+    show_branches: bool,
 }
 
 impl<'a> Request<'a> {
     pub fn parse(_cmd: &'a CommandInteraction, options: &'_ [ResolvedOption<'a>]) -> Result<Self, RequestError> {
         let mut branch = "main";
+        let mut show_branches = false;
+        let mut show_details = false;
         for opt in options {
             match opt.name {
+                "show_branches" => {
+                    let ResolvedValue::Boolean(u) = opt.value else {
+                        trc::error!("Bad value for `show_branches` in `monthly_goal set` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `show_branches` in `monthly_goal set`.".into()));
+                    };
+                    show_branches = u;
+                }
+                "show_details" => {
+                    let ResolvedValue::Boolean(u) = opt.value else {
+                        trc::error!("Bad value for `show_details` in `monthly_goal set` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `show_details` in `monthly_goal set`.".into()));
+                    };
+                    show_details = u;
+                }
                 "branch" => {
                     let ResolvedValue::String(u) = opt.value else {
                         trc::error!("Bad value for `branch` in `monthly_goal set` {:?}", opt);
@@ -31,6 +49,8 @@ impl<'a> Request<'a> {
 
         Ok(Self {
             branch,
+            show_details,
+            show_branches,
         })
     }
 
@@ -54,13 +74,15 @@ impl<'a> Request<'a> {
         branch_data.remove("main");
         let branch_data = branch_data;
 
-        if main_data.len() + branch_data.len() == 0 {
+        if main_data.is_empty() && branch_data.is_empty() {
             ctx.reply_restricted("No goals have been set up!".to_owned()).await?;
             return Ok(());
         }
 
         let all_progress = main_data.iter().map(|goal| goal.progress as f64)
-            .chain(branch_data.iter().map(|(_branch, (progress, total_progress))| 100. * (*progress as f64 / *total_progress as f64)))
+            .chain(self.show_details.then(|| branch_data.iter()
+                .map(|(_branch, (progress, total_progress))| 100. * (*progress as f64 / *total_progress as f64))
+            ).into_flat_iter())
             .map(|progress| progress.min(100.) as usize)
             .sum();
         let total_possible_progress = 100 * (main_data.len() + branch_data.len());
@@ -74,7 +96,7 @@ impl<'a> Request<'a> {
             (all_progress as f64 / total_possible_progress as f64).clamp(0., 1.) * 100.,
             progrs_bar::Bar::new(all_progress, total_possible_progress.max(1)).generate_string(25, fetch_branch_color("main"))
         ))
-            .chain(branch_data.into_iter().map(|(branch_name, (branch_progress, branch_goals_count))| {
+            .chain(self.show_branches.then(|| branch_data.into_iter().map(|(branch_name, (branch_progress, branch_goals_count))| {
                 format!(
                     "\
                         ## {}\n\
@@ -88,8 +110,8 @@ impl<'a> Request<'a> {
                         usize::try_from((branch_goals_count * 100).max(1)).unwrap_or(1),
                     ).generate_string(25, fetch_branch_color(branch_name.as_str())),
                 )
-            }))
-            .chain(main_data.into_iter().map(|goal| {
+            })).into_flat_iter())
+            .chain(self.show_details.then(|| main_data.into_iter().map(|goal| {
                 format!(
                     "\
                         ## {}\n\
@@ -102,7 +124,7 @@ impl<'a> Request<'a> {
                     goal.progress as f64,
                     progrs_bar::Bar::new(usize::try_from(goal.progress).unwrap_or(0), 100).generate_string(25, fetch_branch_color(goal.tag.as_str())),
                 )
-            }))
+            })).into_flat_iter())
             .collect();
 
         ctx.reply_restricted(msg).await?;
@@ -115,7 +137,7 @@ impl<'a> Request<'a> {
             return Err(RequestError::Internal("Failed to load monthly goals.".into()));
         };
 
-        if data.len() == 0 {
+        if data.is_empty() {
             ctx.reply_restricted("No goals have been set up!".to_owned()).await?;
             return Ok(());
         }

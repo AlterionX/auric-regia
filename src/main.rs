@@ -1,4 +1,4 @@
-#![feature(never_type)]
+#![feature(never_type, option_into_flat_iter)]
 
 mod schema;
 mod db;

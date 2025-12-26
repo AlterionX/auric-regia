@@ -681,7 +681,17 @@ impl DiscordCommandDescriptor for RequestKind {
                             ("Legion", "legion"),
                             ("Industry", "industry"),
                         ],
-                    }
+                    },
+                    RawCommandOptionEntry::Boolean {
+                        name: "show_details",
+                        description: "Whether to show additional detail (defaults to false)",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::Boolean {
+                        name: "show_branches",
+                        description: "Whether to show additional detail (defaults to false), only applies if checking Main goals",
+                        required: false,
+                    },
                 ]
             },
             RequestKind::MonthlyGoalSet => {
