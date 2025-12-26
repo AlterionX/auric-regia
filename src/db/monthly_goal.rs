@@ -49,7 +49,11 @@ impl MonthlyGoal {
         let mut conn = connection_maker.async_connect().await?;
 
         diesel::insert_into(schema::monthly_goals::table)
-            .values(new.clone())
+            .values(NewMonthlyGoal {
+                header: Some(new.header.unwrap_or("placeholder title")),
+                body: Some(new.body.unwrap_or("placeholder body")),
+                ..new.clone()
+            })
             .on_conflict(schema::monthly_goals::shortname)
             .filter_target(schema::monthly_goals::disabled.is_null())
             .do_update()
