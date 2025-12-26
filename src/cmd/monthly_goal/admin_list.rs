@@ -49,7 +49,7 @@ impl <'a> Request<'a> {
 
         let msg: String = std::iter::once(Cow::Borrowed("- "))
             .chain(goals.iter()
-                .map(|goal| Cow::Owned(format!("`{}` {}\n> {}", goal.shortname, goal.progress, goal.header)))
+                .map(|goal| Cow::Owned(format!("[{}] `{}` {}\n> {}", goal.tag, goal.shortname, goal.progress, goal.header)))
                 .intersperse(Cow::Borrowed("\n- ")))
             .collect();
         ctx.reply_restricted(msg).await?;

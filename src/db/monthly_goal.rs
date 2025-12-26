@@ -154,7 +154,10 @@ impl MonthlyGoal {
         Ok(schema::monthly_goals::table
             .filter(schema::monthly_goals::tag.eq(branch))
             .filter(schema::monthly_goals::disabled.is_null())
-            .order_by(schema::monthly_goals::created)
+            .order_by((
+                schema::monthly_goals::tag,
+                schema::monthly_goals::shortname
+            ))
             .get_results(&mut conn)
             .await?)
     }
@@ -164,7 +167,10 @@ impl MonthlyGoal {
 
         Ok(schema::monthly_goals::table
             .filter(schema::monthly_goals::disabled.is_null())
-            .order_by(schema::monthly_goals::created)
+            .order_by((
+                schema::monthly_goals::tag,
+                schema::monthly_goals::shortname
+            ))
             .get_results(&mut conn).await?)
     }
 }
