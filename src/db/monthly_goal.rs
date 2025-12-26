@@ -148,18 +148,23 @@ impl MonthlyGoal {
         Ok(results)
     }
 
-    pub async fn load_for_branch(connection_maker: &impl Connector, branch: &str) -> DbResult<Vec<Self>> {
+    pub async fn load_active_for_branch(connection_maker: &impl Connector, branch: &str) -> DbResult<Vec<Self>> {
         let mut conn = connection_maker.async_connect().await?;
 
         Ok(schema::monthly_goals::table
             .filter(schema::monthly_goals::tag.eq(branch))
+            .filter(schema::monthly_goals::disabled.is_null())
+            .order_by(schema::monthly_goals::created)
             .get_results(&mut conn)
             .await?)
     }
 
-    pub async fn load_all(connection_maker: &impl Connector) -> DbResult<Vec<Self>> {
+    pub async fn load_all_active(connection_maker: &impl Connector) -> DbResult<Vec<Self>> {
         let mut conn = connection_maker.async_connect().await?;
 
-        Ok(schema::monthly_goals::table.get_results(&mut conn).await?)
+        Ok(schema::monthly_goals::table
+            .filter(schema::monthly_goals::disabled.is_null())
+            .order_by(schema::monthly_goals::created)
+            .get_results(&mut conn).await?)
     }
 }

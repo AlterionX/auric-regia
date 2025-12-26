@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use serenity::all::{CommandInteraction, ResolvedOption, ResolvedValue};
 use tracing as trc;
 
@@ -36,16 +38,20 @@ impl <'a> Request<'a> {
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
         let goals = if let Some(branch) = self.branch {
-            db::MonthlyGoal::load_for_branch(&ctx.db_cfg, branch).await
+            db::MonthlyGoal::load_active_for_branch(&ctx.db_cfg, branch).await
         } else {
-            db::MonthlyGoal::load_all(&ctx.db_cfg).await
+            db::MonthlyGoal::load_all_active(&ctx.db_cfg).await
         };
 
         let Ok(goals) = goals else {
             return Err(RequestError::Internal("Failed to load monthly goals.".into()));
         };
 
-        let msg = goals.iter().map(|goal| format!("{} {}", goal.shortname, goal.progress)).collect::<Vec<_>>().join("\n- ");
+        let msg: String = std::iter::once(Cow::Borrowed("- "))
+            .chain(goals.iter()
+                .map(|goal| Cow::Owned(format!("`{}` {}\n> {}", goal.shortname, goal.progress, goal.header)))
+                .intersperse(Cow::Borrowed("\n- ")))
+            .collect();
         ctx.reply_restricted(msg).await?;
 
         Ok(())
