@@ -80,9 +80,7 @@ impl<'a> Request<'a> {
         }
 
         let all_progress = main_data.iter().map(|goal| goal.progress as f64)
-            .chain(self.show_details.then(|| branch_data.iter()
-                .map(|(_branch, (progress, total_progress))| 100. * (*progress as f64 / *total_progress as f64))
-            ).into_flat_iter())
+            .chain(branch_data.iter().map(|(_branch, (progress, total_progress))| 100. * (*progress as f64 / *total_progress as f64)))
             .map(|progress| progress.min(100.) as usize)
             .sum();
         let total_possible_progress = 100 * (main_data.len() + branch_data.len());
@@ -156,7 +154,7 @@ impl<'a> Request<'a> {
                 (all_progress as f64 / total_possible_progress as f64) * 100.,
                 progrs_bar::Bar::new(all_progress, total_possible_progress).generate_string(25, branch_color),
             ))
-            .chain(data.into_iter().map(|goal| {
+            .chain(self.show_details.then(|| data.into_iter().map(|goal| {
                 format!(
                     "\
                         ## {}\n\
@@ -169,7 +167,7 @@ impl<'a> Request<'a> {
                     goal.progress as f64,
                     progrs_bar::Bar::new(usize::try_from(goal.progress).unwrap_or(0), 100).generate_string(25, branch_color),
                 )
-            }))
+            })).into_flat_iter())
             .collect();
 
         ctx.reply_restricted(msg).await?;
