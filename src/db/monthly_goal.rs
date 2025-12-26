@@ -91,6 +91,32 @@ impl MonthlyGoal {
         Ok(())
     }
 
+    pub async fn clear_active_by_shortname(connection_maker: &impl Connector, shortname: &str) -> DbResult<()> {
+        let mut conn = connection_maker.async_connect().await?;
+
+        diesel::update(schema::monthly_goals::table)
+            .set(schema::monthly_goals::disabled.eq(diesel::dsl::now))
+            .filter(schema::monthly_goals::disabled.is_null())
+            .filter(schema::monthly_goals::shortname.eq(shortname))
+            .execute(&mut conn)
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn clear_active_by_tag(connection_maker: &impl Connector, tag: &str) -> DbResult<()> {
+        let mut conn = connection_maker.async_connect().await?;
+
+        diesel::update(schema::monthly_goals::table)
+            .set(schema::monthly_goals::disabled.eq(diesel::dsl::now))
+            .filter(schema::monthly_goals::disabled.is_null())
+            .filter(schema::monthly_goals::tag.eq(tag))
+            .execute(&mut conn)
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn load_primary_summary(connection_maker: &impl Connector) -> DbResult<HashMap<String, (i64, i64)>> {
         let mut conn = connection_maker.async_connect().await?;
 

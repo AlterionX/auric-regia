@@ -61,7 +61,7 @@ pub enum RequestArgs<'a> {
 
     MonthlyGoalCheck(monthly_goal::check::Request<'a>),
     MonthlyGoalSet(monthly_goal::set::Request<'a>),
-    MonthlyGoalClear(monthly_goal::clear::Request),
+    MonthlyGoalClear(monthly_goal::clear::Request<'a>),
     MonthlyGoalAdminList(monthly_goal::admin_list::Request<'a>),
 }
 
@@ -722,7 +722,18 @@ impl DiscordCommandDescriptor for RequestKind {
                 ]
             },
             RequestKind::MonthlyGoalClear => {
-                vec![]
+                vec![
+                    RawCommandOptionEntry::String {
+                        name: "shortname",
+                        description: "Shortname to clear",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::String {
+                        name: "branch",
+                        description: "Branch to clear",
+                        required: false,
+                    },
+                ]
             },
             RequestKind::MonthlyGoalAdminList => {
                 vec![
