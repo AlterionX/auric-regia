@@ -69,25 +69,23 @@ impl<'a> Request<'a> {
             "\
                 # Goal Progress: Main\n\
                 \n\
-                Progress ({}%): ```ansi\n{}\n```\n\
-                \n\
+                Progress ({:.2}%): ```ansi\n{}\n```\n\
             ",
             (all_progress as f64 / total_possible_progress as f64).clamp(0., 1.) * 100.,
             progrs_bar::Bar::new(all_progress, total_possible_progress.max(1)).generate_string(25, fetch_branch_color("main"))
         ))
-            .chain(branch_data.into_iter().map(|(branch_name, (branch_progress, branch_total_progress))| {
+            .chain(branch_data.into_iter().map(|(branch_name, (branch_progress, branch_goals_count))| {
                 format!(
                     "\
                         ## {}\n\
                         \n\
-                        Progress ({}%): ```ansi\n{}\n```\n\
-                        \n\
+                        Progress ({:.2}%): ```ansi\n{}\n```\n\
                     ",
-                    branch_name,
-                    (branch_progress as f64 / branch_total_progress.max(1) as f64).clamp(0., 1.) * 100.,
+                    fetch_branch_display_name(branch_name.as_str()),
+                    (branch_progress as f64 / (branch_goals_count * 100).max(1) as f64).clamp(0., 1.) * 100.,
                     progrs_bar::Bar::new(
                         usize::try_from(branch_progress).unwrap_or(0),
-                        usize::try_from(branch_total_progress.max(1)).unwrap_or(1),
+                        usize::try_from((branch_goals_count * 100).max(1)).unwrap_or(1),
                     ).generate_string(25, fetch_branch_color(branch_name.as_str())),
                 )
             }))
@@ -97,8 +95,7 @@ impl<'a> Request<'a> {
                         ## {}\n\
                         {}\n\
                         \n\
-                        Progress ({}%): ```ansi\n{}\n```\n\
-                        \n\
+                        Progress ({:.2}%): ```ansi\n{}\n```\n\
                     ",
                     goal.header,
                     goal.body,
@@ -118,20 +115,32 @@ impl<'a> Request<'a> {
             return Err(RequestError::Internal("Failed to load monthly goals.".into()));
         };
 
+        if data.len() == 0 {
+            ctx.reply_restricted("No goals have been set up!".to_owned()).await?;
+            return Ok(());
+        }
+
         let branch_color = fetch_branch_color(self.branch);
 
         let all_progress = data.iter().map(|goal| usize::try_from(goal.progress).unwrap_or(0)).sum();
         let total_possible_progress = 100 * data.len();
 
-        let msg: String = std::iter::once(progrs_bar::Bar::new(all_progress, total_possible_progress).generate_string(25, branch_color))
+        let msg: String = std::iter::once(format!(
+                "\
+                    # Goal Progress: {}\n\
+                    Progress ({:.2}%): ```ansi\n{}\n```\n\
+                ",
+                fetch_branch_display_name(self.branch),
+                (all_progress as f64 / total_possible_progress as f64) * 100.,
+                progrs_bar::Bar::new(all_progress, total_possible_progress).generate_string(25, branch_color),
+            ))
             .chain(data.into_iter().map(|goal| {
                 format!(
                     "\
                         ## {}\n\
                         {}\n\
                         \n\
-                        Progress ({}%): ```ansi\n{}\n```\n\
-                        \n\
+                        Progress ({:.2}%): ```ansi\n{}\n```\n\
                     ",
                     goal.header,
                     goal.body,
@@ -147,12 +156,22 @@ impl<'a> Request<'a> {
     }
 }
 
+pub fn fetch_branch_display_name(branch: &str) -> &'static str {
+    match branch {
+        "navy" => "Navy",
+        "legion" => "Legion",
+        "industry" => "Industry",
+        "main" => "Main",
+        _ => "Other",
+    }
+}
+
 pub fn fetch_branch_color(branch: &str) -> crossterm::style::Color {
     match branch {
-        "navy" => Some(crossterm::style::Color::AnsiValue(27)),
-        "legion" => Some(crossterm::style::Color::AnsiValue(41)),
-        "industry" => Some(crossterm::style::Color::AnsiValue(55)),
-        "main" => Some(crossterm::style::Color::AnsiValue(221)),
+        "navy" => Some(crossterm::style::Color::AnsiValue(34)),
+        "legion" => Some(crossterm::style::Color::AnsiValue(32)),
+        "industry" => Some(crossterm::style::Color::AnsiValue(35)),
+        "main" => Some(crossterm::style::Color::AnsiValue(33)),
         _ => Some(crossterm::style::Color::White),
     }.expect(branch)
 }

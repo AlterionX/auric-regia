@@ -691,10 +691,12 @@ impl DiscordCommandDescriptor for RequestKind {
                         description: "Name for the goal. If active doesn't exist, will create",
                         required: true,
                     },
-                    RawCommandOptionEntry::Integer {
+                    RawCommandOptionEntry::LimitedInteger {
                         name: "progress",
                         description: "Progress of the goal, up to 100",
                         required: false,
+                        max: 100,
+                        min: 0,
                     },
                     RawCommandOptionEntry::String {
                         name: "header",
