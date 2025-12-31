@@ -65,12 +65,14 @@ impl Request {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         let victories_to_add = self.victory_fourths as f64 / 4.;
 
         let change = db::NewNavalVictoryCountChange {
             updater: u64::from(ctx.cmd.user.id).into(),
             target: u64::from(self.user_id).into(),
             victory_fourths: self.victory_fourths.into(),
+            guild_id: u64::from(guild_id).into(),
         };
 
         let final_victories = match db::NavalVictoryCount::adjust_count(&ctx.db_cfg, change).await {

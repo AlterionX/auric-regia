@@ -41,7 +41,8 @@ impl Request {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
-        let display_victories = db::NavalVictoryCount::load_for(&ctx.db_cfg, self.0).await.map(|n| n.victory_fourths.to_i64().unwrap_or(0) as f64 / 4.).unwrap_or(0.);
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
+        let display_victories = db::NavalVictoryCount::load_for(&ctx.db_cfg, self.0, guild_id).await.map(|n| n.victory_fourths.to_i64().unwrap_or(0) as f64 / 4.).unwrap_or(0.);
         ctx.reply_restricted(format!("We have {display_victories} victories recorded for {}.", self.0.mention())).await
     }
 }
