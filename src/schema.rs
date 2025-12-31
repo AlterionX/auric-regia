@@ -9,15 +9,18 @@ diesel::table! {
         event_participation -> Numeric,
         #[max_length = 10000]
         user_note -> Nullable<Varchar>,
+        guild_id -> Numeric,
     }
 }
 
 diesel::table! {
     event_participation_counts (id) {
-        id -> Numeric,
+        user_id -> Numeric,
         created -> Timestamptz,
         updated -> Timestamptz,
         event_participation -> Numeric,
+        guild_id -> Numeric,
+        id -> Int8,
     }
 }
 
@@ -28,6 +31,7 @@ diesel::table! {
         updater -> Numeric,
         target -> Numeric,
         alpha_united_earth_credits -> Numeric,
+        guild_id -> Numeric,
     }
 }
 
@@ -37,6 +41,7 @@ diesel::table! {
         created -> Timestamptz,
         updated -> Timestamptz,
         alpha_united_earth_credits -> Numeric,
+        guild_id -> Numeric,
     }
 }
 
@@ -47,15 +52,18 @@ diesel::table! {
         updater -> Numeric,
         target -> Numeric,
         kills -> Numeric,
+        guild_id -> Numeric,
     }
 }
 
 diesel::table! {
     legion_kill_counts (id) {
-        id -> Numeric,
+        user_id -> Numeric,
         created -> Timestamptz,
         updated -> Timestamptz,
         kills -> Numeric,
+        guild_id -> Numeric,
+        id -> Int8,
     }
 }
 
@@ -74,6 +82,7 @@ diesel::table! {
         #[max_length = 50]
         shortname -> Varchar,
         disabled -> Nullable<Timestamptz>,
+        guild_id -> Numeric,
     }
 }
 
@@ -86,15 +95,18 @@ diesel::table! {
         tackle_assists -> Numeric,
         #[max_length = 10000]
         user_note -> Nullable<Varchar>,
+        guild_id -> Numeric,
     }
 }
 
 diesel::table! {
     naval_tackle_assist_counts (id) {
-        id -> Numeric,
+        user_id -> Numeric,
         created -> Timestamptz,
         updated -> Timestamptz,
         tackle_assists -> Numeric,
+        guild_id -> Numeric,
+        id -> Int8,
     }
 }
 
@@ -105,15 +117,18 @@ diesel::table! {
         updater -> Numeric,
         target -> Numeric,
         victory_fourths -> Numeric,
+        guild_id -> Numeric,
     }
 }
 
 diesel::table! {
     naval_victory_counts (id) {
-        id -> Numeric,
+        user_id -> Numeric,
         created -> Timestamptz,
         updated -> Timestamptz,
         victory_fourths -> Numeric,
+        guild_id -> Numeric,
+        id -> Int8,
     }
 }
 
