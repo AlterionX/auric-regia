@@ -59,11 +59,13 @@ impl <'a> Request<'a> {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         let change = db::NewEventParticipationCountChange {
             updater: u64::from(ctx.cmd.user.id).into(),
             target: u64::from(self.user_id).into(),
             event_participation: self.event_participation.into(),
             user_note: self.note.map(|s| s.to_owned()),
+            guild_id: u64::from(guild_id).into(),
         };
 
         let final_count = match db::EventParticipationCount::adjust_count(&ctx.db_cfg, change).await {

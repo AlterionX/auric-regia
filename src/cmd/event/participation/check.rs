@@ -31,7 +31,8 @@ impl Request {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
-        let count = db::EventParticipationCount::load_for(&ctx.db_cfg, self.0).await.map(|record| record.event_participation).unwrap_or(0.into());
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
+        let count = db::EventParticipationCount::load_for(&ctx.db_cfg, self.0, guild_id).await.map(|record| record.event_participation).unwrap_or(0.into());
         ctx.reply_restricted(format!("We have {count} events recorded for {}.", self.0.mention())).await
     }
 }
