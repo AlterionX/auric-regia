@@ -28,10 +28,11 @@ impl Request {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         let mut current_offset = 0;
         let mut records_to_delete = vec![];
 
-        while let Some(active_records) = match LegionKillCount::load_asc(&ctx.db_cfg, current_offset, QUERY_LIMIT).await {
+        while let Some(active_records) = match LegionKillCount::load_asc(&ctx.db_cfg, guild_id, current_offset, QUERY_LIMIT).await {
             Ok(v) => if v.is_empty() {
                 None
             } else {

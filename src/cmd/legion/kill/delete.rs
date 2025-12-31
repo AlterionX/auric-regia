@@ -51,12 +51,14 @@ impl Request {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         let kills_to_remove = self.kills;
 
         let change = db::NewLegionKillCountChange {
             updater: u64::from(ctx.cmd.user.id).into(),
             target: u64::from(self.user_id).into(),
             kills: BigDecimal::from(self.kills).neg(),
+            guild_id: BigDecimal::from(u64::from(guild_id)),
         };
 
         let final_kills = match db::LegionKillCount::adjust_count(&ctx.db_cfg, change).await {
