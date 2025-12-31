@@ -50,11 +50,13 @@ impl Request {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         let tackle_assists_to_add = self.tackle_assists;
         let change = db::NewNavalTackleAssistCountChange {
             updater: u64::from(ctx.cmd.user.id).into(),
             target: u64::from(self.user_id).into(),
             tackle_assists: self.tackle_assists.into(),
+            guild_id: u64::from(guild_id).into(),
         };
 
         let final_tackle_assists = match db::NavalTackleAssistCount::adjust_count(&ctx.db_cfg, change).await {
