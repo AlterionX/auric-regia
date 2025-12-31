@@ -132,12 +132,11 @@ impl LegionKillCount {
             .await?)
     }
 
-    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, guild_id: GuildId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[i64]) -> Result<usize, AdjustmentError> {
         let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         let data = diesel::delete(
             schema::legion_kill_counts::table
-                .filter(schema::legion_kill_counts::user_id.eq(BigDecimal::from(u64::from(guild_id))))
-                .filter(schema::legion_kill_counts::user_id.eq_any(ids))
+                .filter(schema::legion_kill_counts::id.eq_any(ids))
         ).get_results::<Self>(&mut conn).await.map_err(AdjustmentError::Change)?;
         let deleted_record_count = data.len();
 

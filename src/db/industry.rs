@@ -124,22 +124,21 @@ impl IndustryProfitCount {
             .await?)
     }
 
-    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, guild_id: GuildId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[i64]) -> Result<usize, AdjustmentError> {
         let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         let data = diesel::delete(
             schema::industry_profit_counts::table
-                .filter(schema::industry_profit_counts::guild_id.eq(BigDecimal::from(u64::from(guild_id))))
-                .filter(schema::industry_profit_counts::user_id.eq_any(ids))
+                .filter(schema::industry_profit_counts::id.eq_any(ids))
         ).get_results::<Self>(&mut conn).await.map_err(AdjustmentError::Change)?;
         let deleted_record_count = data.len();
 
         // write changes back to db
         diesel::insert_into(schema::industry_profit_count_changes::table)
-            .values(data.into_iter().map(|IndustryProfitCount { user_id, alpha_united_earth_credits, .. }| NewIndustryProfitCountChange {
+            .values(data.into_iter().map(|IndustryProfitCount { user_id, guild_id, alpha_united_earth_credits, .. }| NewIndustryProfitCountChange {
                 updater: u64::from(deleter).into(),
                 target: user_id,
                 alpha_united_earth_credits,
-                guild_id: BigDecimal::from(u64::from(guild_id)),
+                guild_id,
             }).collect::<Vec<_>>())
             .execute(&mut conn)
             .await

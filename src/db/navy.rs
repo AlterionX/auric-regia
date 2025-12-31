@@ -130,12 +130,11 @@ impl NavalVictoryCount {
             .await?)
     }
 
-    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, guild_id: GuildId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[i64]) -> Result<usize, AdjustmentError> {
         let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         let data = diesel::delete(
             schema::naval_victory_counts::table
-                .filter(schema::naval_victory_counts::guild_id.eq(BigDecimal::from(u64::from(guild_id))))
-                .filter(schema::naval_victory_counts::user_id.eq_any(ids))
+                .filter(schema::naval_victory_counts::id.eq_any(ids))
         ).get_results::<Self>(&mut conn).await.map_err(AdjustmentError::Change)?;
         let deleted_record_count = data.len();
 
@@ -265,12 +264,11 @@ impl NavalTackleAssistCount {
             .await?)
     }
 
-    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, guild_id: GuildId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[i64]) -> Result<usize, AdjustmentError> {
         let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         let data = diesel::delete(
             schema::naval_tackle_assist_counts::table
-                .filter(schema::naval_tackle_assist_counts::guild_id.eq(BigDecimal::from(u64::from(guild_id))))
-                .filter(schema::naval_tackle_assist_counts::user_id.eq_any(ids))
+                .filter(schema::naval_tackle_assist_counts::id.eq_any(ids))
         ).get_results::<Self>(&mut conn).await.map_err(AdjustmentError::Change)?;
         let deleted_record_count = data.len();
 
