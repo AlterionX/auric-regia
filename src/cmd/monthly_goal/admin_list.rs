@@ -37,10 +37,11 @@ impl <'a> Request<'a> {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         let goals = if let Some(branch) = self.branch {
-            db::MonthlyGoal::load_active_for_branch(&ctx.db_cfg, branch).await
+            db::MonthlyGoal::load_active_for_branch(&ctx.db_cfg, guild_id, branch).await
         } else {
-            db::MonthlyGoal::load_all_active(&ctx.db_cfg).await
+            db::MonthlyGoal::load_all_active(&ctx.db_cfg, guild_id).await
         };
 
         let Ok(goals) = goals else {

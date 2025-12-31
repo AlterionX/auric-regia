@@ -1,4 +1,4 @@
-use serenity::all::{CommandInteraction, ResolvedOption, ResolvedValue};
+use serenity::all::{CommandInteraction, GuildId, ResolvedOption, ResolvedValue};
 use tracing as trc;
 
 use azel::discord::ExecutionContext;
@@ -55,19 +55,20 @@ impl<'a> Request<'a> {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         if self.branch != "main" {
-            self.execute_branch_summary(ctx).await
+            self.execute_branch_summary(ctx, guild_id).await
         } else {
-            self.execute_main_summary(ctx).await
+            self.execute_main_summary(ctx, guild_id).await
         }
     }
 
-    pub async fn execute_main_summary(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
-        let Ok(main_data) = db::MonthlyGoal::load_detailed_summary(&ctx.db_cfg, "main").await else {
+    pub async fn execute_main_summary(self, ctx: &ExecutionContext<'_>, guild_id: GuildId) -> Result<(), RequestError> {
+        let Ok(main_data) = db::MonthlyGoal::load_detailed_summary(&ctx.db_cfg, guild_id, "main").await else {
             return Err(RequestError::Internal("Failed to load monthly goals.".into()));
         };
 
-        let Ok(mut branch_data) = db::MonthlyGoal::load_primary_summary(&ctx.db_cfg).await else {
+        let Ok(mut branch_data) = db::MonthlyGoal::load_primary_summary(&ctx.db_cfg, guild_id).await else {
             return Err(RequestError::Internal("Failed to load monthly goals.".into()));
         };
         // We're calculating this on the side, ignore any values from the db for this.
@@ -130,8 +131,8 @@ impl<'a> Request<'a> {
         Ok(())
     }
 
-    pub async fn execute_branch_summary(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
-        let Ok(data) = db::MonthlyGoal::load_detailed_summary(&ctx.db_cfg, self.branch).await else {
+    pub async fn execute_branch_summary(self, ctx: &ExecutionContext<'_>, guild_id: GuildId) -> Result<(), RequestError> {
+        let Ok(data) = db::MonthlyGoal::load_detailed_summary(&ctx.db_cfg, guild_id, self.branch).await else {
             return Err(RequestError::Internal("Failed to load monthly goals.".into()));
         };
 

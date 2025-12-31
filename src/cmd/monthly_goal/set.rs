@@ -88,6 +88,7 @@ impl <'a> Request<'a> {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         match db::MonthlyGoal::upsert(&ctx.db_cfg, db::NewMonthlyGoal {
             updater: u64::from(ctx.cmd.user.id).into(),
             shortname: self.shortname,
@@ -95,6 +96,7 @@ impl <'a> Request<'a> {
             header: self.header,
             body: self.body,
             progress: self.progress,
+            guild_id: u64::from(guild_id).into(),
         }).await {
             Ok(_) => {},
             Err(e) => {

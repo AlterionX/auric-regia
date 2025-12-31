@@ -45,20 +45,21 @@ impl<'a> Request<'a> {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         if let Some(branch) = self.branch {
-            let Ok(_) = db::MonthlyGoal::clear_active_by_tag(&ctx.db_cfg, branch).await else {
+            let Ok(_) = db::MonthlyGoal::clear_active_by_tag(&ctx.db_cfg, guild_id, branch).await else {
                 return Err(RequestError::Internal("Failure to write".into()));
             };
         }
 
         if let Some(shortname) = self.shortname {
-            let Ok(_) = db::MonthlyGoal::clear_active_by_shortname(&ctx.db_cfg, shortname).await else {
+            let Ok(_) = db::MonthlyGoal::clear_active_by_shortname(&ctx.db_cfg, guild_id, shortname).await else {
                 return Err(RequestError::Internal("Failure to write".into()));
             };
         }
 
         if self.shortname.is_none() && self.branch.is_none() {
-            let Ok(_) = db::MonthlyGoal::clear_active(&ctx.db_cfg).await else {
+            let Ok(_) = db::MonthlyGoal::clear_active(&ctx.db_cfg, guild_id).await else {
                 return Err(RequestError::Internal("Failure to write".into()));
             };
         }
