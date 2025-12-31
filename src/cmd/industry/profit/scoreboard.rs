@@ -201,7 +201,7 @@ impl<'a> Request<'a> {
             buffer.push_str(format!(
                 "\t{}) {}: {} aUEC in profits\n",
                 start + offset as i64,
-                Mention::User(UserId::from(record.id.to_u64().unwrap())),
+                Mention::User(UserId::from(record.user_id.to_u64().unwrap())),
                 record.alpha_united_earth_credits
             ).as_str());
         }

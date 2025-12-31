@@ -201,7 +201,7 @@ impl<'a> Request<'a> {
             buffer.push_str(format!(
                 "\t{}) {}: {}",
                 start + offset as i64,
-                Mention::User(UserId::from(record.id.to_u64().unwrap())),
+                Mention::User(UserId::from(record.user_id.to_u64().unwrap())),
                 record.victory_fourths.to_u64().unwrap() as f64 / 4.
             ).as_str());
             if record.victory_fourths.to_u64().unwrap() != 4 {

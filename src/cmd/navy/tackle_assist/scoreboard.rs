@@ -201,7 +201,7 @@ impl<'a> Request<'a> {
             buffer.push_str(format!(
                 "\t{}) {}: {}",
                 start + offset as i64,
-                Mention::User(UserId::from(record.id.to_u64().unwrap())),
+                Mention::User(UserId::from(record.user_id.to_u64().unwrap())),
                 record.tackle_assists.to_u64().unwrap()
             ).as_str());
             if record.tackle_assists.to_u64().unwrap() != 1 {
