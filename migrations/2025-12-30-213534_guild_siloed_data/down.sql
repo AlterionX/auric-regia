@@ -1,3 +1,9 @@
+DROP INDEX unique_naval_victory_count_per_guild_per_user;
+DROP INDEX unique_legion_kill_count_per_guild_per_user;
+DROP INDEX unique_industry_profit_count_per_guild_per_user;
+DROP INDEX unique_event_participation_count_per_guild_per_user;
+DROP INDEX unique_naval_tackle_assist_count_per_guild_per_user;
+
 -- And now we need to reindex back
 ALTER TABLE naval_victory_counts
     DROP CONSTRAINT naval_victory_counts_pkey,
@@ -10,6 +16,12 @@ ALTER TABLE legion_kill_counts
     DROP COLUMN id,
     ADD PRIMARY KEY (user_id);
 ALTER TABLE legion_kill_counts
+    RENAME COLUMN user_id TO id;
+ALTER TABLE industry_profit_counts
+    DROP CONSTRAINT industry_profit_counts_pkey,
+    DROP COLUMN id,
+    ADD PRIMARY KEY (user_id);
+ALTER TABLE industry_profit_counts
     RENAME COLUMN user_id TO id;
 ALTER TABLE event_participation_counts
     DROP CONSTRAINT event_participation_counts_pkey,

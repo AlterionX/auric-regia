@@ -4,7 +4,7 @@ use bigdecimal::BigDecimal;
 use chrono::{Duration, Utc};
 use diesel::{BoolExpressionMethods, ConnectionError, ExpressionMethods, OptionalExtension, QueryDsl, prelude::{Identifiable, Insertable, Queryable}};
 use diesel_async::RunQueryDsl;
-use serenity::all::UserId;
+use serenity::all::{GuildId, UserId};
 use crate::schema;
 
 use azel::db::{Connector, DbResult};
@@ -16,16 +16,19 @@ pub struct NewIndustryProfitCountChange {
     pub updater: BigDecimal,
     pub target: BigDecimal,
     pub alpha_united_earth_credits: BigDecimal,
+    pub guild_id: BigDecimal,
 }
 
 #[derive(Debug, Clone)]
 #[derive(Insertable, Queryable, Identifiable)]
 #[diesel(table_name = schema::industry_profit_counts)]
 pub struct IndustryProfitCount {
-    pub id: BigDecimal,
+    pub user_id: BigDecimal,
     pub created: chrono::DateTime<chrono::Utc>,
     pub updated: chrono::DateTime<chrono::Utc>,
     pub alpha_united_earth_credits: BigDecimal,
+    pub guild_id: BigDecimal,
+    pub id: i64,
 }
 
 diesel::define_sql_function! {
@@ -41,11 +44,11 @@ pub enum AdjustmentError {
 }
 
 impl IndustryProfitCount {
-    pub async fn load_for(connection_maker: &impl Connector, user: UserId) -> Option<Self> {
+    pub async fn load_for(connection_maker: &impl Connector, user_id: UserId, guild_id: GuildId) -> Option<Self> {
         let mut conn = connection_maker.async_connect().await.ok()?;
-        let id: u64 = user.into();
         schema::industry_profit_counts::table
-            .filter(schema::industry_profit_counts::id.eq(BigDecimal::from(id)))
+            .filter(schema::industry_profit_counts::user_id.eq(BigDecimal::from(u64::from(user_id))))
+            .filter(schema::industry_profit_counts::guild_id.eq(BigDecimal::from(u64::from(guild_id))))
             .get_result(&mut conn)
             .await
             .optional()
@@ -61,11 +64,12 @@ impl IndustryProfitCount {
             .map_err(AdjustmentError::Change)?;
         diesel::insert_into(schema::industry_profit_counts::table)
             .values((
-                schema::industry_profit_counts::id.eq(change.target),
+                schema::industry_profit_counts::user_id.eq(change.target),
+                schema::industry_profit_counts::guild_id.eq(change.guild_id),
                 schema::industry_profit_counts::updated.eq(diesel::dsl::now),
                 schema::industry_profit_counts::alpha_united_earth_credits.eq(&change.alpha_united_earth_credits),
             ))
-            .on_conflict(schema::industry_profit_counts::id)
+            .on_conflict((schema::industry_profit_counts::user_id, schema::industry_profit_counts::guild_id))
             .do_update()
             .set((
                 schema::industry_profit_counts::updated.eq(diesel::dsl::now),
@@ -77,17 +81,18 @@ impl IndustryProfitCount {
             .map_err(AdjustmentError::Count)
     }
 
-    pub async fn count_rows(connection_maker: &impl Connector) -> DbResult<i64> {
+    pub async fn count_rows(connection_maker: &impl Connector, guild_id: GuildId) -> DbResult<i64> {
         let mut conn = connection_maker.async_connect().await?;
-        Ok(schema::industry_profit_counts::table.count().get_result(&mut conn).await?)
+        Ok(schema::industry_profit_counts::table.filter(schema::industry_profit_counts::guild_id.eq(BigDecimal::from(u64::from(guild_id)))).count().get_result(&mut conn).await?)
     }
 
-    pub async fn get_rank_of(connection_maker: &impl Connector, user_id: UserId) -> DbResult<i64> {
+    pub async fn get_rank_of(connection_maker: &impl Connector, user_id: UserId, guild_id: GuildId) -> DbResult<i64> {
         let mut conn = connection_maker.async_connect().await?;
-        let user_record = Self::load_for(connection_maker, user_id).await;
+        let user_record = Self::load_for(connection_maker, user_id, guild_id).await;
         let alpha_united_earth_credits = user_record.as_ref().map(|r| r.alpha_united_earth_credits.clone()).unwrap_or_default();
         let usage = user_record.as_ref().map(|r| r.updated).unwrap_or(Utc::now() + Duration::milliseconds(100));
         Ok(schema::industry_profit_counts::table
+            .filter(schema::industry_profit_counts::guild_id.eq(BigDecimal::from(u64::from(guild_id))))
             .filter(
                 schema::industry_profit_counts::updated.lt(usage)
                     .and(schema::industry_profit_counts::alpha_united_earth_credits.gt(alpha_united_earth_credits))
@@ -97,9 +102,10 @@ impl IndustryProfitCount {
             .await?)
     }
 
-    pub async fn load_asc(connection_maker: &impl Connector, start: i64, lim: i64) -> DbResult<Vec<Self>> {
+    pub async fn load_asc(connection_maker: &impl Connector, guild_id: GuildId, start: i64, lim: i64) -> DbResult<Vec<Self>> {
         let mut conn = connection_maker.async_connect().await?;
         Ok(schema::industry_profit_counts::table
+            .filter(schema::industry_profit_counts::guild_id.eq(BigDecimal::from(u64::from(guild_id))))
             .order((schema::industry_profit_counts::alpha_united_earth_credits.desc(), schema::industry_profit_counts::updated))
             .offset(start)
             .limit(lim)
@@ -107,9 +113,10 @@ impl IndustryProfitCount {
             .await?)
     }
 
-    pub async fn load_desc(connection_maker: &impl Connector, start: i64, lim: i64) -> DbResult<Vec<Self>> {
+    pub async fn load_desc(connection_maker: &impl Connector, guild_id: GuildId, start: i64, lim: i64) -> DbResult<Vec<Self>> {
         let mut conn = connection_maker.async_connect().await?;
         Ok(schema::industry_profit_counts::table
+            .filter(schema::industry_profit_counts::guild_id.eq(BigDecimal::from(u64::from(guild_id))))
             .order((schema::industry_profit_counts::alpha_united_earth_credits, schema::industry_profit_counts::updated.desc()))
             .offset(start)
             .limit(lim)
@@ -117,20 +124,22 @@ impl IndustryProfitCount {
             .await?)
     }
 
-    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
+    pub async fn delete(connection_maker: &impl Connector, deleter: UserId, guild_id: GuildId, ids: &[BigDecimal]) -> Result<usize, AdjustmentError> {
         let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
         let data = diesel::delete(
             schema::industry_profit_counts::table
-                .filter(schema::industry_profit_counts::id.eq_any(ids))
+                .filter(schema::industry_profit_counts::guild_id.eq(BigDecimal::from(u64::from(guild_id))))
+                .filter(schema::industry_profit_counts::user_id.eq_any(ids))
         ).get_results::<Self>(&mut conn).await.map_err(AdjustmentError::Change)?;
         let deleted_record_count = data.len();
 
         // write changes back to db
         diesel::insert_into(schema::industry_profit_count_changes::table)
-            .values(data.into_iter().map(|IndustryProfitCount { id, alpha_united_earth_credits, .. }| NewIndustryProfitCountChange {
+            .values(data.into_iter().map(|IndustryProfitCount { user_id, alpha_united_earth_credits, .. }| NewIndustryProfitCountChange {
                 updater: u64::from(deleter).into(),
-                target: id,
+                target: user_id,
                 alpha_united_earth_credits,
+                guild_id: BigDecimal::from(u64::from(guild_id)),
             }).collect::<Vec<_>>())
             .execute(&mut conn)
             .await

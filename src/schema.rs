@@ -37,11 +37,12 @@ diesel::table! {
 
 diesel::table! {
     industry_profit_counts (id) {
-        id -> Numeric,
+        user_id -> Numeric,
         created -> Timestamptz,
         updated -> Timestamptz,
         alpha_united_earth_credits -> Numeric,
         guild_id -> Numeric,
+        id -> Int8,
     }
 }
 
