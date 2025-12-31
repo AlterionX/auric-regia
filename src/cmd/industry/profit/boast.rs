@@ -14,7 +14,8 @@ impl Request {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
-        let profit = db::IndustryProfitCount::load_for(&ctx.db_cfg, self.0).await.map(|record| record.alpha_united_earth_credits).unwrap_or(0.into());
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
+        let profit = db::IndustryProfitCount::load_for(&ctx.db_cfg, self.0, guild_id).await.map(|record| record.alpha_united_earth_credits).unwrap_or(0.into());
         ctx.reply_restricted(format!("@here {} has earned {profit} aUEC!", self.0.mention())).await
     }
 }

@@ -51,10 +51,12 @@ impl Request {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         let change = db::NewIndustryProfitCountChange {
             updater: u64::from(ctx.cmd.user.id).into(),
             target: u64::from(self.user_id).into(),
             alpha_united_earth_credits: BigDecimal::from(self.auec).neg(),
+            guild_id: u64::from(guild_id).into(),
         };
 
         let Ok(final_auec) = db::IndustryProfitCount::adjust_count(&ctx.db_cfg, change).await else {

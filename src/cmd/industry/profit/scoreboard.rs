@@ -114,13 +114,14 @@ impl<'a> Request<'a> {
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
         if self.limit == 0 {
             return ctx.reply("Scoreboard:".to_owned()).await;
         }
 
         let (start, ordering) = match self.at {
             Locator::Top => {
-                let v = match IndustryProfitCount::load_asc(&ctx.db_cfg, 0, self.limit).await {
+                let v = match IndustryProfitCount::load_asc(&ctx.db_cfg, guild_id, 0, self.limit).await {
                     Ok(v) => v,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
@@ -130,14 +131,14 @@ impl<'a> Request<'a> {
                 (1, v)
             },
             Locator::Bottom => {
-                let count = match IndustryProfitCount::count_rows(&ctx.db_cfg).await {
+                let count = match IndustryProfitCount::count_rows(&ctx.db_cfg, guild_id).await {
                     Ok(c) => c,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
                         return Err(RequestError::Internal("failed to get number of users".into()));
                     },
                 };
-                let mut a = match IndustryProfitCount::load_desc(&ctx.db_cfg, 0, self.limit).await {
+                let mut a = match IndustryProfitCount::load_desc(&ctx.db_cfg, guild_id, 0, self.limit).await {
                     Ok(v) => v,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
@@ -148,7 +149,7 @@ impl<'a> Request<'a> {
                 (count - a.len() as i64 + 1, a)
             },
             Locator::Rank(r) => {
-                let a = match IndustryProfitCount::load_asc(&ctx.db_cfg, r, self.limit).await {
+                let a = match IndustryProfitCount::load_asc(&ctx.db_cfg, guild_id, r, self.limit).await {
                     Ok(v) => v,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
@@ -158,7 +159,7 @@ impl<'a> Request<'a> {
                 (r + 1, a)
             },
             Locator::Me => {
-                let rank = match IndustryProfitCount::get_rank_of(&ctx.db_cfg, ctx.cmd.user.id).await {
+                let rank = match IndustryProfitCount::get_rank_of(&ctx.db_cfg, ctx.cmd.user.id, guild_id).await {
                     Ok(r) => r,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from me {:?} due to {e:?}.", ctx.cmd.user.id);
@@ -166,7 +167,7 @@ impl<'a> Request<'a> {
                     },
                 };
                 let start = 0.max(rank - (self.limit / 2));
-                let v = match IndustryProfitCount::load_asc(&ctx.db_cfg, start, self.limit).await {
+                let v = match IndustryProfitCount::load_asc(&ctx.db_cfg, guild_id, start, self.limit).await {
                     Ok(v) => v,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
@@ -176,7 +177,7 @@ impl<'a> Request<'a> {
                 (start + 1, v)
             },
             Locator::Someone(u) => {
-                let rank = match IndustryProfitCount::get_rank_of(&ctx.db_cfg, u).await {
+                let rank = match IndustryProfitCount::get_rank_of(&ctx.db_cfg, u, guild_id).await {
                     Ok(r) => r,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from me {:?} due to {e:?}.", u);
@@ -184,7 +185,7 @@ impl<'a> Request<'a> {
                     },
                 };
                 let start = 0.max(rank - (self.limit / 2));
-                let v = match IndustryProfitCount::load_asc(&ctx.db_cfg, start, self.limit).await {
+                let v = match IndustryProfitCount::load_asc(&ctx.db_cfg, guild_id, start, self.limit).await {
                     Ok(v) => v,
                     Err(e) => {
                         trc::error!("Failed to get scoreboard items from top due to {e:?}.");
