@@ -53,6 +53,7 @@ impl<'a> Request<'a> {
         }
 
         if let Some(shortname) = self.shortname {
+            // TODO Detect if shortname doesn't actually exist
             let Ok(_) = db::MonthlyGoal::clear_active_by_shortname(&ctx.db_cfg, guild_id, shortname).await else {
                 return Err(RequestError::Internal("Failure to write".into()));
             };
