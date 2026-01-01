@@ -33,6 +33,12 @@ pub enum RequestArgs<'a> {
     IndustryProfitCheck(industry::profit::check::Request),
     IndustryProfitScoreboard(industry::profit::scoreboard::Request<'a>),
     IndustryProfitClearUnknown(industry::profit::clear::Request),
+    IndustrySavedPersonnelRecord(lib::generic_tracker::record::Request),
+    IndustrySavedPersonnelDelete(lib::generic_tracker::delete::Request),
+    IndustrySavedPersonnelBoast(lib::generic_tracker::boast::Request),
+    IndustrySavedPersonnelCheck(lib::generic_tracker::check::Request),
+    IndustrySavedPersonnelScoreboard(lib::generic_tracker::scoreboard::Request<'a>),
+    IndustrySavedPersonnelClearUnknown(lib::generic_tracker::clear::Request),
 
     // Dummy variants needed for the request kind enum, these are
     // subsumed into the ones below.
@@ -107,6 +113,24 @@ impl DiscordCommandDescriptor for RequestKind {
                 "scoreboard"
             },
             RequestKind::IndustryProfitClearUnknown => {
+                "clear_unknown"
+            },
+            RequestKind::IndustrySavedPersonnelRecord => {
+                "record"
+            },
+            RequestKind::IndustrySavedPersonnelDelete => {
+                "delete"
+            },
+            RequestKind::IndustrySavedPersonnelBoast => {
+                "boast"
+            },
+            RequestKind::IndustrySavedPersonnelCheck => {
+                "check"
+            },
+            RequestKind::IndustrySavedPersonnelScoreboard => {
+                "scoreboard"
+            },
+            RequestKind::IndustrySavedPersonnelClearUnknown => {
                 "clear_unknown"
             },
 
@@ -225,6 +249,24 @@ impl DiscordCommandDescriptor for RequestKind {
                 "Creates the scoreboard of profits across Auric."
             },
             RequestKind::IndustryProfitClearUnknown => {
+                "Removes old unknown users from the scoreboard"
+            },
+            RequestKind::IndustrySavedPersonnelRecord => {
+                "Record saved personnel"
+            },
+            RequestKind::IndustrySavedPersonnelDelete => {
+                "Delete saved personnel"
+            },
+            RequestKind::IndustrySavedPersonnelBoast => {
+                "Boast about your saved personnel"
+            },
+            RequestKind::IndustrySavedPersonnelCheck => {
+                "Checks someone's (or your own) saved personnel count"
+            },
+            RequestKind::IndustrySavedPersonnelScoreboard => {
+                "Creates the scoreboard of saved personnel across Auric"
+            },
+            RequestKind::IndustrySavedPersonnelClearUnknown => {
                 "Removes old unknown users from the scoreboard"
             },
 
@@ -437,6 +479,80 @@ impl DiscordCommandDescriptor for RequestKind {
                 ]
             },
             RequestKind::IndustryProfitClearUnknown => {
+                vec![]
+            },
+            RequestKind::IndustrySavedPersonnelRecord => {
+                vec![
+                    RawCommandOptionEntry::Integer {
+                        name: "saved_personnel",
+                        description: "Number of saved personnel. Defaults to 1.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being recorded for. Leaving this out means that you're recording your own profits.",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::IndustrySavedPersonnelDelete => {
+                vec![
+                    RawCommandOptionEntry::Integer {
+                        name: "saved_personnel",
+                        description: "Number of saved personnel. Defaults to 1.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being recorded for. Leaving this out means that you're recording your own profits.",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::IndustrySavedPersonnelBoast => {
+                vec![]
+            },
+            RequestKind::IndustrySavedPersonnelCheck => {
+                vec![
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person to get victories for. Defaults to self. Quieter than boasting.",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::IndustrySavedPersonnelScoreboard => {
+                vec![
+                    RawCommandOptionEntry::Integer {
+                        name: "limit",
+                        description: "Maximum entries to return. Max of 20. Defaults to 10.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::StringSelect {
+                        name: "at",
+                        description: "What to orient the scoreboard on.",
+                        required: false,
+                        choices: vec![
+                            ("Me", "me"),
+                            ("Bottom", "bottom"),
+                            ("Top (default)", "top"),
+                            ("Someone", "someone"),
+                            ("Rank", "rank"),
+                        ],
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "someone",
+                        description: "Should only be provided if \"at\" is set to \"someone\".",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::Integer {
+                        name: "rank",
+                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\"",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::IndustrySavedPersonnelClearUnknown => {
                 vec![]
             },
 
@@ -808,6 +924,41 @@ impl DiscordCommandDescriptor for RequestKind {
                     return Err(RequestError::Internal("Missing options for `industry`.".into()));
                 };
                 match tier1.name {
+                    "saved_personnel" => {
+                        let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
+                            return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
+                        };
+                        let Some(tier2) = tier1_options.first() else {
+                            return Err(RequestError::Internal("Missing options for `industry saved_personnel`.".into()));
+                        };
+                        let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
+                            return Err(RequestError::Internal("Missing subcommand for `industry saved_personnel`.".into()));
+                        };
+                        match tier2.name {
+                            "record" => {
+                                Ok(RequestArgs::IndustrySavedPersonnelRecord(lib::generic_tracker::record::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                            },
+                            "delete" => {
+                                Ok(RequestArgs::IndustrySavedPersonnelDelete(lib::generic_tracker::delete::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                            },
+                            "boast" => {
+                                Ok(RequestArgs::IndustrySavedPersonnelBoast(lib::generic_tracker::boast::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, &[])?))
+                            },
+                            "check" => {
+                                Ok(RequestArgs::IndustrySavedPersonnelCheck(lib::generic_tracker::check::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                            },
+                            "scoreboard" => {
+                                Ok(RequestArgs::IndustrySavedPersonnelScoreboard(lib::generic_tracker::scoreboard::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                            },
+                            "clear_unknown" => {
+                                Ok(RequestArgs::IndustrySavedPersonnelClearUnknown(lib::generic_tracker::clear::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, &[])?))
+                            },
+                            _ => {
+                                trc::warn!("Unknown subcommand {:?}", tier1);
+                                Err(RequestError::Internal("Unknown subcommand for `industry saved_personnel`".into()))
+                            },
+                        }
+                    },
                     "profit" => {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
                             return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
@@ -1083,6 +1234,25 @@ impl <'a> DiscordCommandArgs for RequestArgs<'a> {
                 req.execute(ctx).await
             },
             RequestArgs::IndustryProfitClearUnknown(req) => {
+                req.execute(ctx).await
+            },
+
+            RequestArgs::IndustrySavedPersonnelRecord(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::IndustrySavedPersonnelDelete(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::IndustrySavedPersonnelBoast(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::IndustrySavedPersonnelCheck(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::IndustrySavedPersonnelScoreboard(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::IndustrySavedPersonnelClearUnknown(req) => {
                 req.execute(ctx).await
             },
 
