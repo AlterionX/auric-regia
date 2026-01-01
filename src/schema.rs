@@ -133,6 +133,32 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    tracker_count_changes (id) {
+        id -> Int8,
+        created -> Timestamptz,
+        #[max_length = 500]
+        stat -> Varchar,
+        guild_id -> Numeric,
+        updater -> Numeric,
+        target -> Numeric,
+        total -> Numeric,
+    }
+}
+
+diesel::table! {
+    tracker_counts (id) {
+        id -> Int8,
+        created -> Timestamptz,
+        updated -> Timestamptz,
+        #[max_length = 100]
+        stat -> Varchar,
+        guild_id -> Numeric,
+        user_id -> Numeric,
+        total -> Numeric,
+    }
+}
+
 diesel::allow_tables_to_appear_in_same_query!(
     event_participation_count_changes,
     event_participation_counts,
@@ -145,4 +171,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     naval_tackle_assist_counts,
     naval_victory_count_changes,
     naval_victory_counts,
+    tracker_count_changes,
+    tracker_counts,
 );

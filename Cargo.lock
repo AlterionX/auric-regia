@@ -88,6 +88,7 @@ dependencies = [
  "crossterm",
  "diesel",
  "diesel-async",
+ "diesel-pg-type-utils",
  "progrs-bar",
  "serde",
  "serenity",
@@ -510,6 +511,20 @@ dependencies = [
  "scoped-futures",
  "tokio",
  "tokio-postgres",
+]
+
+[[package]]
+name = "diesel-pg-type-utils"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2303ffa331fface22a244557bbc9c5aeb802cf7e0ac7c148fc16973f9507fe4"
+dependencies = [
+ "bigdecimal",
+ "diesel",
+ "diesel-async",
+ "serde",
+ "thiserror 1.0.69",
+ "treeerror",
 ]
 
 [[package]]
