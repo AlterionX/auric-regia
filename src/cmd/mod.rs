@@ -1,3 +1,6 @@
+// Things used for implementing most things.
+pub mod lib;
+
 pub mod navy;
 pub mod legion;
 pub mod industry;

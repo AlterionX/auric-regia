@@ -74,7 +74,6 @@ pub use tracker_count_id::TrackerCountId;
 #[derive(Insertable)]
 #[diesel(table_name = schema::tracker_count_changes)]
 pub struct NewTrackerCountChange {
-    pub created: chrono::DateTime<chrono::Utc>,
     pub stat: TrackerStat,
     pub guild_id: DiscordGuildId,
     pub updater: DiscordUserId,
@@ -151,6 +150,30 @@ impl TrackerCount {
             .get_result(&mut conn)
             .await
             .map_err(AdjustmentError::Count)
+    }
+
+    pub async fn delete(connection_maker: &impl Connector, deleter: DiscordUserId, ids: &[TrackerCountId]) -> Result<usize, AdjustmentError> {
+        let mut conn = connection_maker.async_connect().await.map_err(AdjustmentError::Connect)?;
+        let data = diesel::delete(
+            schema::tracker_counts::table
+                .filter(schema::tracker_counts::id.eq_any(ids))
+        ).get_results::<Self>(&mut conn).await.map_err(AdjustmentError::Change)?;
+        let deleted_record_count = data.len();
+
+        // write changes back to db
+        diesel::insert_into(schema::tracker_count_changes::table)
+            .values(data.into_iter().map(|TrackerCount { stat, user_id, guild_id, total, .. }| NewTrackerCountChange {
+                stat,
+                updater: deleter,
+                target: user_id,
+                total: -total,
+                guild_id,
+            }).collect::<Vec<_>>())
+            .execute(&mut conn)
+            .await
+            .map_err(AdjustmentError::Count)?;
+
+        Ok(deleted_record_count)
     }
 
     pub async fn count_rows(connection_maker: &impl Connector, stat: TrackerStat, guild_id: DiscordGuildId) -> DbResult<i64> {
