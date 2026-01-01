@@ -25,7 +25,8 @@ impl Request {
         })
     }
 
-    pub async fn execute(Self { stat, guild_id, user_id }: Self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+    pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let Self { stat, guild_id, user_id } = self;
         let record = db::TrackerCount::load_for(&ctx.db_cfg, stat, guild_id, user_id).await;
         ctx.reply_restricted(format_stat_for_boast(stat, user_id, record.map(|r| r.total))).await
     }

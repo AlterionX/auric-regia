@@ -57,7 +57,8 @@ impl Request {
         })
     }
 
-    pub async fn execute(Self { stat, total, user_id, guild_id }: Self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+    pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let Self { stat, total, user_id, guild_id } = self;
         let change = db::NewTrackerCountChange {
             stat,
             guild_id,

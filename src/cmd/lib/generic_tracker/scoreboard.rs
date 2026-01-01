@@ -118,7 +118,8 @@ impl<'a> Request<'a> {
         })
     }
 
-    pub async fn execute(Self { stat, guild_id, limit, at, .. }: Self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+    pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
+        let Self { stat, guild_id, limit, at, .. } = self;
         if limit == 0 {
             return ctx.reply("Scoreboard:".to_owned()).await;
         }
