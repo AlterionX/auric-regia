@@ -1366,6 +1366,18 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
                     ],
                 },
                 CommandTreeIntermediate {
+                    name: "saved_personnel",
+                    description: "Commands for managing saved personnel records",
+                    children: vec![
+                        RequestKind::IndustrySavedPersonnelRecord,
+                        RequestKind::IndustrySavedPersonnelDelete,
+                        RequestKind::IndustrySavedPersonnelBoast,
+                        RequestKind::IndustrySavedPersonnelCheck,
+                        RequestKind::IndustrySavedPersonnelScoreboard,
+                        RequestKind::IndustrySavedPersonnelClearUnknown,
+                    ],
+                },
+                CommandTreeIntermediate {
                     name: "profit",
                     description: "Commands for managing profit records",
                     children: vec![
@@ -1375,12 +1387,6 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
                         RequestKind::IndustryProfitCheck,
                         RequestKind::IndustryProfitScoreboard,
                         RequestKind::IndustryProfitClearUnknown,
-                        RequestKind::IndustrySavedPersonnelRecord,
-                        RequestKind::IndustrySavedPersonnelDelete,
-                        RequestKind::IndustrySavedPersonnelBoast,
-                        RequestKind::IndustrySavedPersonnelCheck,
-                        RequestKind::IndustrySavedPersonnelScoreboard,
-                        RequestKind::IndustrySavedPersonnelClearUnknown,
                     ],
                 },
             ],
