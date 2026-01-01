@@ -202,20 +202,22 @@ impl<'a> Request<'a> {
 
         let mut buffer = "**Scoreboard:**\n".to_owned();
         for (offset, record) in ordering.into_iter().enumerate() {
+            append_row_for_stat(stat, start + offset as i64, record, &mut buffer);
+        }
+
+        ctx.reply_restricted(buffer).await
+    }
+}
+
+fn append_row_for_stat(stat: TrackerStat, rank: i64, record: db::TrackerCount, buffer: &mut String) {
+    match stat {
+        TrackerStat::PersonnelSaved => {
             buffer.push_str(format!(
-                "\t{}) {}: {}",
-                start + offset as i64,
+                "\t{}) {}: {} personnel saved\n",
+                rank,
                 record.user_id.inner().mention(),
                 record.total.to_u64().unwrap()
             ).as_str());
-            if record.total.to_u64().unwrap() != 1 {
-                buffer.push_str(" victories\n");
-            } else {
-                buffer.push_str(" victory\n");
-            }
-        }
-
-        let _ = ctx.reply_restricted(buffer).await;
-        Ok(())
+        },
     }
 }
