@@ -1,4 +1,4 @@
-use bigdecimal::{BigDecimal, ToPrimitive};
+use bigdecimal::BigDecimal;
 use serenity::all::{CommandInteraction, Mentionable, ResolvedOption, ResolvedValue};
 use tracing as trc;
 
@@ -21,14 +21,14 @@ impl Request {
             match opt.name {
                 "user" => {
                     let ResolvedValue::User(u, _) = opt.value else {
-                        trc::error!("Bad value for `user` in `navy victory check` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `user` in `navy victory check`.".into()));
+                        trc::error!("Bad value for `user` in `{} check` {:?}", stat.cmd_name(), opt);
+                        return Err(RequestError::Internal(format!("Bad value for `user` in `{} check`.", stat.cmd_name()).into()));
                     };
                     user_id = u.id;
                 }
                 _ => {
-                    trc::error!("Unknown option `{}` for `navy victory check`", opt.name);
-                    return Err(RequestError::Internal("Unknown option in `navy victory check`".into()));
+                    trc::error!("Unknown option `{}` for `{} check`", stat.cmd_name(), opt.name);
+                    return Err(RequestError::Internal(format!("Unknown option in `{} check`", stat.cmd_name()).into()));
                 }
             }
         }
@@ -50,8 +50,7 @@ impl Request {
 fn format_stat_for_check(stat: TrackerStat, user_id: DiscordUserId, total: Option<BigDecimal>) -> String {
     match stat {
         TrackerStat::PersonnelSaved => {
-            let value = total.and_then(|t| t.to_i64()).unwrap_or(0);
-            format!("We have {} victories recorded for {}.", value, user_id.inner().mention())
+            format!("We have {} saved personnel recorded for {}.", total.unwrap_or_default(), user_id.inner().mention())
         },
     }
 }

@@ -1,4 +1,4 @@
-use bigdecimal::{BigDecimal, ToPrimitive};
+use bigdecimal::BigDecimal;
 use serenity::all::{CommandInteraction, Mentionable, ResolvedOption};
 // use tracing as trc;
 
@@ -34,8 +34,7 @@ impl Request {
 fn format_stat_for_boast(stat: TrackerStat, user_id: DiscordUserId, total: Option<BigDecimal>) -> String {
     match stat {
         TrackerStat::PersonnelSaved => {
-            let value = total.and_then(|t| t.to_i64()).unwrap_or(0);
-            format!("@here {} has earned {} victories!", user_id.inner().mention(), value)
+            format!("@here {} has saved {} personnel!", user_id.inner().mention(), total.unwrap_or_default())
         },
     }
 }

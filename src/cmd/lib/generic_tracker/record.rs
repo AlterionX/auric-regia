@@ -25,25 +25,25 @@ impl Request {
             match opt.name {
                 "total" => {
                     let ResolvedValue::Integer(k) = opt.value else {
-                        trc::error!("Bad value for `total` in `navy victory delete` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `total` in `navy victory delete`.".into()));
+                        trc::error!("Bad value for `total` in `{} delete` {:?}", stat.cmd_name(), opt);
+                        return Err(RequestError::Internal(format!("Bad value for `total` in `{} delete`.", stat.cmd_name()).into()));
                     };
                     if k < 0 {
-                        trc::error!("Bad value for `total` in `navy victory delete` {:?}", opt);
-                        return Err(RequestError::User("Negative value for `total` in `navy victory delete`. Were you looking for `navy victory record`?".into()));
+                        trc::error!("Bad value for `total` in `{} delete` {:?}", stat.cmd_name(), opt);
+                        return Err(RequestError::User(format!("Negative value for `total` in `{} delete`. Were you looking for `{} record`?", stat.cmd_name(), stat.cmd_name()).into()));
                     }
                     total = k;
                 }
                 "user" => {
                     let ResolvedValue::User(u, _) = opt.value else {
-                        trc::error!("Bad value for `user` in `navy victory delete` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `user` in `navy victory delete`.".into()));
+                        trc::error!("Bad value for `user` in `{} delete` {:?}", stat.cmd_name(), opt);
+                        return Err(RequestError::Internal(format!("Bad value for `user` in `{} delete`.", stat.cmd_name()).into()));
                     };
                     user_id = u.id;
                 }
                 _ => {
-                    trc::error!("Unknown option `{}` for `navy victory delete`", opt.name);
-                    return Err(RequestError::Internal("Unknown option in `navy victory delete`".into()));
+                    trc::error!("Unknown option `{}` for `{} delete`", stat.cmd_name(), opt.name);
+                    return Err(RequestError::Internal(format!("Unknown option in `{} delete`", stat.cmd_name()).into()));
                 }
             }
         }
@@ -67,7 +67,7 @@ impl Request {
         };
 
         let Ok(new_total) = db::TrackerCount::adjust_count(&ctx.db_cfg, change).await else {
-            trc::error!("Failed to update count for navy victory delete.");
+            trc::error!("Failed to update count for {} delete.", stat.cmd_name());
             return Err(RequestError::Internal("Count update failed".into()));
         };
 

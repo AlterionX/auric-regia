@@ -37,8 +37,8 @@ impl<'a> Request<'a> {
             match opt.name {
                 "limit" => {
                     let ResolvedValue::Integer(lim) = opt.value else {
-                        trc::error!("Bad value for `limit` in `navy victory scoreboard` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `limit` in `navy victory scoreboard`.".into()));
+                        trc::error!("Bad value for `limit` in `{} scoreboard` {:?}", stat.cmd_name(), opt);
+                        return Err(RequestError::Internal(format!("Bad value for `limit` in `{} scoreboard`.", stat.cmd_name()).into()));
                     };
                     if lim > 50 {
                         trc::error!("Bad value for `limit` in `legion kill scoreboard` {:?}", opt);
@@ -48,28 +48,28 @@ impl<'a> Request<'a> {
                 },
                 "at" => {
                     let ResolvedValue::String(a) = opt.value else {
-                        trc::error!("Bad value for `at` in `navy victory scoreboard` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `at` in `navy victory scoreboard`".into()));
+                        trc::error!("Bad value for `at` in `{} scoreboard` {:?}", stat.cmd_name(), opt);
+                        return Err(RequestError::Internal(format!("Bad value for `at` in `{} scoreboard`", stat.cmd_name()).into()));
                     };
                     at_discrim = a;
                 },
                 "someone" => {
                     let ResolvedValue::User(u, _) = opt.value else {
-                        trc::error!("Bad value for `someone` in `navy victory scoreboard` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `someone` in `navy victory scoreboard`".into()));
+                        trc::error!("Bad value for `someone` in `{} scoreboard` {:?}", stat.cmd_name(), opt);
+                        return Err(RequestError::Internal(format!("Bad value for `someone` in `{} scoreboard`", stat.cmd_name()).into()));
                     };
                     someone = Some(u.id);
                 },
                 "rank" => {
                     let ResolvedValue::Integer(r) = opt.value else {
-                        trc::error!("Bad value for `rank` in `navy victory scoreboard` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `rank` in `navy victory scoreboard`".into()));
+                        trc::error!("Bad value for `rank` in `{} scoreboard` {:?}", stat.cmd_name(), opt);
+                        return Err(RequestError::Internal(format!("Bad value for `rank` in `{} scoreboard`", stat.cmd_name()).into()));
                     };
                     rank = Some(r);
                 },
                 _ => {
-                    trc::error!("Unknown option in `navy victory scoreboard` {:?}", opt);
-                    return Err(RequestError::Internal("Unknown value for `rank` in `navy victory scoreboard`".into()));
+                    trc::error!("Unknown option in `{} scoreboard` {:?}", stat.cmd_name(), opt);
+                    return Err(RequestError::Internal(format!("Unknown value for `rank` in `{} scoreboard`", stat.cmd_name()).into()));
                 }
             }
         }
@@ -105,7 +105,7 @@ impl<'a> Request<'a> {
                 Locator::Rank(r)
             },
             _ => {
-                return Err(RequestError::Internal("Unknown value for `at` in `navy victory scoreboard`.".into()));
+                return Err(RequestError::Internal(format!("Unknown value for `at` in `{} scoreboard`.", stat.cmd_name()).into()));
             },
         };
 

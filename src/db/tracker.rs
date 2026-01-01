@@ -45,7 +45,10 @@ mod tracker_stat {
     );
 
     impl TrackerStat {
-        pub fn exec(&self) {
+        pub fn cmd_name(&self) -> &'static str {
+            match self {
+                Self::PersonnelSaved => "industry saved_personnel",
+            }
         }
     }
 
