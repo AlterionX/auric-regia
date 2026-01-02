@@ -150,6 +150,7 @@ impl TrackerCount {
             .map_err(AdjustmentError::Change)?;
         diesel::insert_into(schema::tracker_counts::table)
             .values((
+                schema::tracker_counts::stat.eq(change.stat),
                 schema::tracker_counts::user_id.eq(change.target),
                 schema::tracker_counts::guild_id.eq(change.guild_id),
                 schema::tracker_counts::updated.eq(diesel::dsl::now),
@@ -158,7 +159,7 @@ impl TrackerCount {
                     &change.total,
                 )),
             ))
-            .on_conflict((schema::tracker_counts::user_id, schema::tracker_counts::guild_id))
+            .on_conflict((schema::tracker_counts::stat, schema::tracker_counts::guild_id, schema::tracker_counts::user_id))
             .do_update()
             .set((
                 schema::tracker_counts::updated.eq(diesel::dsl::now),

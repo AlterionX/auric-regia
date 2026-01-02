@@ -818,8 +818,8 @@ impl DiscordCommandDescriptor for RequestKind {
                             .collect(),
                     },
                     RawCommandOptionEntry::Integer {
-                        name: "saved_personnel",
-                        description: "Number of saved personnel. Defaults to 1.",
+                        name: "total",
+                        description: "Total to add. Defaults to 1.",
                         required: false,
                     },
                     RawCommandOptionEntry::User {
@@ -843,8 +843,8 @@ impl DiscordCommandDescriptor for RequestKind {
                             .collect(),
                     },
                     RawCommandOptionEntry::Integer {
-                        name: "saved_personnel",
-                        description: "Number of saved personnel. Defaults to 1.",
+                        name: "total",
+                        description: "Total to remove. Defaults to 1.",
                         required: false,
                     },
                     RawCommandOptionEntry::User {

@@ -23,6 +23,7 @@ impl Request {
         let mut user_id = cmd.user.id;
         for opt in options {
             match opt.name {
+                "stat" => {},
                 "total" => {
                     let ResolvedValue::Integer(k) = opt.value else {
                         trc::error!("Bad value for `total` in `{} delete` {:?}", stat.cmd_name(), opt);
@@ -67,9 +68,12 @@ impl Request {
             total: total.clone(),
         };
 
-        let Ok(new_total) = db::TrackerCount::adjust_count(&ctx.db_cfg, change).await else {
-            trc::error!("Failed to update count for {} delete.", stat.cmd_name());
-            return Err(RequestError::Internal("Count update failed".into()));
+        let new_total = match db::TrackerCount::adjust_count(&ctx.db_cfg, change).await {
+            Ok(new_total) => new_total,
+            Err(e) => {
+                trc::error!("Failed to update count for {} delete. {e:?}", stat.cmd_name());
+                return Err(RequestError::Internal("Count update failed".into()));
+            },
         };
 
         ctx.reply(format_delete_for_stat(stat, user_id, total, new_total)).await
@@ -79,7 +83,7 @@ impl Request {
 fn format_delete_for_stat(stat: TrackerStat, user_id: DiscordUserId, delta: BigDecimal, new_total: BigDecimal) -> String {
     match stat {
         TrackerStat::PersonnelSaved => {
-            format!("Removed {} saved personnel from {} (total {}).", delta, user_id.inner().mention(), new_total)
+            format!("Added {} saved personnel to {} (total {}).", delta, user_id.inner().mention(), new_total)
         },
     }
 }

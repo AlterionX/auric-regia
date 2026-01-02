@@ -35,6 +35,7 @@ impl<'a> Request<'a> {
         let mut someone = None;
         for opt in options {
             match opt.name {
+                "stat" => {},
                 "limit" => {
                     let ResolvedValue::Integer(lim) = opt.value else {
                         trc::error!("Bad value for `limit` in `{} scoreboard` {:?}", stat.cmd_name(), opt);

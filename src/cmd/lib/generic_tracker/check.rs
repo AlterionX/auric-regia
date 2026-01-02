@@ -26,6 +26,7 @@ impl Request {
                     };
                     user_id = u.id;
                 }
+                "stat" => {},
                 _ => {
                     trc::error!("Unknown option `{}` for `{} check`", stat.cmd_name(), opt.name);
                     return Err(RequestError::Internal(format!("Unknown option in `{} check`", stat.cmd_name()).into()));

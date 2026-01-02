@@ -23,6 +23,7 @@ impl Request {
         let mut user_id = cmd.user.id;
         for opt in options {
             match opt.name {
+                "stat" => {},
                 "total" => {
                     let ResolvedValue::Integer(k) = opt.value else {
                         trc::error!("Bad value for `total` in `{} delete` {:?}", stat.cmd_name(), opt);
