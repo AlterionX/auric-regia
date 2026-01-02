@@ -7,6 +7,8 @@ pub mod industry;
 pub mod event;
 pub mod monthly_goal;
 
+use std::str::FromStr;
+
 use tracing as trc;
 
 use serenity::all::{CommandInteraction, CommandType, ResolvedOption, ResolvedValue};
@@ -811,7 +813,7 @@ impl DiscordCommandDescriptor for RequestKind {
                         choices: crate::db::TrackerStat::iter()
                             .filter(|stat| stat.is_monthly_goal())
                             .map(|stat| {
-                                (stat.as_str(), stat.as_display_name())
+                                (stat.as_command_opt_display_name(), stat.as_str())
                             })
                             .collect(),
                     },
@@ -836,7 +838,7 @@ impl DiscordCommandDescriptor for RequestKind {
                         choices: crate::db::TrackerStat::iter()
                             .filter(|stat| stat.is_monthly_goal())
                             .map(|stat| {
-                                (stat.as_str(), stat.as_display_name())
+                                (stat.as_command_opt_display_name(), stat.as_str())
                             })
                             .collect(),
                     },
@@ -861,7 +863,7 @@ impl DiscordCommandDescriptor for RequestKind {
                         choices: crate::db::TrackerStat::iter()
                             .filter(|stat| stat.is_monthly_goal())
                             .map(|stat| {
-                                (stat.as_str(), stat.as_display_name())
+                                (stat.as_command_opt_display_name(), stat.as_str())
                             })
                             .collect(),
                     },
@@ -876,7 +878,7 @@ impl DiscordCommandDescriptor for RequestKind {
                         choices: crate::db::TrackerStat::iter()
                             .filter(|stat| stat.is_monthly_goal())
                             .map(|stat| {
-                                (stat.as_str(), stat.as_display_name())
+                                (stat.as_command_opt_display_name(), stat.as_str())
                             })
                             .collect(),
                     },
@@ -896,7 +898,7 @@ impl DiscordCommandDescriptor for RequestKind {
                         choices: crate::db::TrackerStat::iter()
                             .filter(|stat| stat.is_monthly_goal())
                             .map(|stat| {
-                                (stat.as_str(), stat.as_display_name())
+                                (stat.as_command_opt_display_name(), stat.as_str())
                             })
                             .collect(),
                     },
@@ -938,7 +940,7 @@ impl DiscordCommandDescriptor for RequestKind {
                         choices: crate::db::TrackerStat::iter()
                             .filter(|stat| stat.is_monthly_goal())
                             .map(|stat| {
-                                (stat.as_str(), stat.as_display_name())
+                                (stat.as_command_opt_display_name(), stat.as_str())
                             })
                             .collect(),
                     },
@@ -1223,29 +1225,42 @@ impl DiscordCommandDescriptor for RequestKind {
                             return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
                         };
                         let Some(tier2) = tier1_options.first() else {
-                            return Err(RequestError::Internal("Missing options for `industry saved_personnel`.".into()));
+                            return Err(RequestError::Internal("Missing options for `monthly_goal progress`.".into()));
                         };
                         let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
-                            return Err(RequestError::Internal("Missing subcommand for `industry saved_personnel`.".into()));
+                            return Err(RequestError::Internal("Missing subcommand for `monthly_goal progress`.".into()));
+                        };
+                        // All monghtly goal progress tracking has stuff.
+                        let stat = {
+                            let Some(stat_opt) = tier2_options.iter().find(|opt| opt.name == "stat") else {
+                                return Err(RequestError::Internal("Missing required option for `monthly_goal progress`.".into()));
+                            };
+                            let ResolvedValue::String(stat_str) = stat_opt.value else {
+                                return Err(RequestError::Internal("Non-string stat option for `monthly_goal progress`.".into()));
+                            };
+                            let Ok(stat) = crate::db::TrackerStat::from_str(stat_str) else {
+                                return Err(RequestError::Internal("Bad stat value for `monthly_goal progress`.".into()));
+                            };
+                            stat
                         };
                         match tier2.name {
                             "record" => {
-                                Ok(RequestArgs::MonthlyGoalProgressRecord(lib::generic_tracker::record::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                                Ok(RequestArgs::MonthlyGoalProgressRecord(lib::generic_tracker::record::Request::parse(cmd, stat, tier2_options.as_slice())?))
                             },
                             "delete" => {
-                                Ok(RequestArgs::MonthlyGoalProgressDelete(lib::generic_tracker::delete::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                                Ok(RequestArgs::MonthlyGoalProgressDelete(lib::generic_tracker::delete::Request::parse(cmd, stat, tier2_options.as_slice())?))
                             },
                             "boast" => {
-                                Ok(RequestArgs::MonthlyGoalProgressBoast(lib::generic_tracker::boast::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, &[])?))
+                                Ok(RequestArgs::MonthlyGoalProgressBoast(lib::generic_tracker::boast::Request::parse(cmd, stat, &[])?))
                             },
                             "check" => {
-                                Ok(RequestArgs::MonthlyGoalProgressCheck(lib::generic_tracker::check::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                                Ok(RequestArgs::MonthlyGoalProgressCheck(lib::generic_tracker::check::Request::parse(cmd, stat, tier2_options.as_slice())?))
                             },
                             "scoreboard" => {
-                                Ok(RequestArgs::MonthlyGoalProgressScoreboard(lib::generic_tracker::scoreboard::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                                Ok(RequestArgs::MonthlyGoalProgressScoreboard(lib::generic_tracker::scoreboard::Request::parse(cmd, stat, tier2_options.as_slice())?))
                             },
                             "clear_unknown" => {
-                                Ok(RequestArgs::MonthlyGoalProgressClearUnknown(lib::generic_tracker::clear::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, &[])?))
+                                Ok(RequestArgs::MonthlyGoalProgressClearUnknown(lib::generic_tracker::clear::Request::parse(cmd, stat, &[])?))
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);

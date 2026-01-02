@@ -43,7 +43,7 @@ mod tracker_stat {
             self.into()
         }
 
-        pub fn as_display_name(&self) -> &'static str {
+        pub fn as_command_opt_display_name(&self) -> &'static str {
             match self {
                 Self::PersonnelSaved => "Personnel Saved",
             }
@@ -65,7 +65,7 @@ mod tracker_stat {
     impl TrackerStat {
         pub fn cmd_name(&self) -> &'static str {
             match self {
-                Self::PersonnelSaved => "industry saved_personnel",
+                Self::PersonnelSaved => "monthly_goal progress",
             }
         }
     }
