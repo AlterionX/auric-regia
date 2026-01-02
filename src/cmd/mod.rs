@@ -10,7 +10,7 @@ pub mod monthly_goal;
 use tracing as trc;
 
 use serenity::all::{CommandInteraction, CommandType, ResolvedOption, ResolvedValue};
-use strum::{EnumCount, EnumDiscriminants, EnumIter};
+use strum::{EnumCount, EnumDiscriminants, EnumIter, IntoEnumIterator};
 
 use azel::{cmd::{CommandTreeTop, CommandTreeIntermediate, DiscordCommandArgs, DiscordCommandDescriptor, RawCommandOptionEntry, RequestError}, discord::ExecutionContext};
 
@@ -483,80 +483,6 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::IndustryProfitClearUnknown => {
                 vec![]
             },
-            RequestKind::MonthlyGoalProgressRecord => {
-                vec![
-                    RawCommandOptionEntry::Integer {
-                        name: "saved_personnel",
-                        description: "Number of saved personnel. Defaults to 1.",
-                        required: false,
-                    },
-                    RawCommandOptionEntry::User {
-                        name: "user",
-                        description: "Person being recorded for. Leaving this out means that you're recording your own profits.",
-                        required: false,
-                    },
-                ]
-            },
-            RequestKind::MonthlyGoalProgressDelete => {
-                vec![
-                    RawCommandOptionEntry::Integer {
-                        name: "saved_personnel",
-                        description: "Number of saved personnel. Defaults to 1.",
-                        required: false,
-                    },
-                    RawCommandOptionEntry::User {
-                        name: "user",
-                        description: "Person being recorded for. Leaving this out means that you're recording your own profits.",
-                        required: false,
-                    },
-                ]
-            },
-            RequestKind::MonthlyGoalProgressBoast => {
-                vec![]
-            },
-            RequestKind::MonthlyGoalProgressCheck => {
-                vec![
-                    RawCommandOptionEntry::User {
-                        name: "user",
-                        description: "Person to get victories for. Defaults to self. Quieter than boasting.",
-                        required: false,
-                    },
-                ]
-            },
-            RequestKind::MonthlyGoalProgressScoreboard => {
-                vec![
-                    RawCommandOptionEntry::Integer {
-                        name: "limit",
-                        description: "Maximum entries to return. Max of 20. Defaults to 10.",
-                        required: false,
-                    },
-                    RawCommandOptionEntry::StringSelect {
-                        name: "at",
-                        description: "What to orient the scoreboard on.",
-                        required: false,
-                        choices: vec![
-                            ("Me", "me"),
-                            ("Bottom", "bottom"),
-                            ("Top (default)", "top"),
-                            ("Someone", "someone"),
-                            ("Rank", "rank"),
-                        ],
-                    },
-                    RawCommandOptionEntry::User {
-                        name: "someone",
-                        description: "Should only be provided if \"at\" is set to \"someone\".",
-                        required: false,
-                    },
-                    RawCommandOptionEntry::Integer {
-                        name: "rank",
-                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\"",
-                        required: false,
-                    },
-                ]
-            },
-            RequestKind::MonthlyGoalProgressClearUnknown => {
-                vec![]
-            },
 
             RequestKind::NavyVictoryRecordOneUser => {
                 vec![]
@@ -872,6 +798,149 @@ impl DiscordCommandDescriptor for RequestKind {
                         name: "branch",
                         description: "Tag of the goal. will get all if not provided",
                         required: false,
+                    },
+                ]
+            },
+
+            RequestKind::MonthlyGoalProgressRecord => {
+                vec![
+                    RawCommandOptionEntry::StringSelect {
+                        name: "stat",
+                        description: "Relevant tracked stat for command",
+                        required: true,
+                        choices: crate::db::TrackerStat::iter()
+                            .filter(|stat| stat.is_monthly_goal())
+                            .map(|stat| {
+                                (stat.as_str(), stat.as_display_name())
+                            })
+                            .collect(),
+                    },
+                    RawCommandOptionEntry::Integer {
+                        name: "saved_personnel",
+                        description: "Number of saved personnel. Defaults to 1.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being recorded for. Leaving this out means that you're recording your own profits.",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::MonthlyGoalProgressDelete => {
+                vec![
+                    RawCommandOptionEntry::StringSelect {
+                        name: "stat",
+                        description: "Relevant tracked stat for command",
+                        required: true,
+                        choices: crate::db::TrackerStat::iter()
+                            .filter(|stat| stat.is_monthly_goal())
+                            .map(|stat| {
+                                (stat.as_str(), stat.as_display_name())
+                            })
+                            .collect(),
+                    },
+                    RawCommandOptionEntry::Integer {
+                        name: "saved_personnel",
+                        description: "Number of saved personnel. Defaults to 1.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person being recorded for. Leaving this out means that you're recording your own profits.",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::MonthlyGoalProgressBoast => {
+                vec![
+                    RawCommandOptionEntry::StringSelect {
+                        name: "stat",
+                        description: "Relevant tracked stat for command",
+                        required: true,
+                        choices: crate::db::TrackerStat::iter()
+                            .filter(|stat| stat.is_monthly_goal())
+                            .map(|stat| {
+                                (stat.as_str(), stat.as_display_name())
+                            })
+                            .collect(),
+                    },
+                ]
+            },
+            RequestKind::MonthlyGoalProgressCheck => {
+                vec![
+                    RawCommandOptionEntry::StringSelect {
+                        name: "stat",
+                        description: "Relevant tracked stat for command",
+                        required: true,
+                        choices: crate::db::TrackerStat::iter()
+                            .filter(|stat| stat.is_monthly_goal())
+                            .map(|stat| {
+                                (stat.as_str(), stat.as_display_name())
+                            })
+                            .collect(),
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "user",
+                        description: "Person to get victories for. Defaults to self. Quieter than boasting.",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::MonthlyGoalProgressScoreboard => {
+                vec![
+                    RawCommandOptionEntry::StringSelect {
+                        name: "stat",
+                        description: "Relevant tracked stat for command",
+                        required: true,
+                        choices: crate::db::TrackerStat::iter()
+                            .filter(|stat| stat.is_monthly_goal())
+                            .map(|stat| {
+                                (stat.as_str(), stat.as_display_name())
+                            })
+                            .collect(),
+                    },
+                    RawCommandOptionEntry::Integer {
+                        name: "limit",
+                        description: "Maximum entries to return. Max of 20. Defaults to 10.",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::StringSelect {
+                        name: "at",
+                        description: "What to orient the scoreboard on.",
+                        required: false,
+                        choices: vec![
+                            ("Me", "me"),
+                            ("Bottom", "bottom"),
+                            ("Top (default)", "top"),
+                            ("Someone", "someone"),
+                            ("Rank", "rank"),
+                        ],
+                    },
+                    RawCommandOptionEntry::User {
+                        name: "someone",
+                        description: "Should only be provided if \"at\" is set to \"someone\".",
+                        required: false,
+                    },
+                    RawCommandOptionEntry::Integer {
+                        name: "rank",
+                        description: "The integer rank to start the scoreboard at. Mutually exclusive with \"someone\"",
+                        required: false,
+                    },
+                ]
+            },
+            RequestKind::MonthlyGoalProgressClearUnknown => {
+                vec![
+                    RawCommandOptionEntry::StringSelect {
+                        name: "stat",
+                        description: "Relevant tracked stat for command",
+                        required: true,
+                        choices: crate::db::TrackerStat::iter()
+                            .filter(|stat| stat.is_monthly_goal())
+                            .map(|stat| {
+                                (stat.as_str(), stat.as_display_name())
+                            })
+                            .collect(),
                     },
                 ]
             },

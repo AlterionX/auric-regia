@@ -14,10 +14,10 @@ mod tracker_stat {
 
     use diesel::{deserialize::FromSqlRow, expression::AsExpression, pg::Pg, sql_types::Text};
     use diesel_pg_type_utils::impl_sql_convert;
-    use strum::{EnumString, IntoStaticStr};
+    use strum::{EnumIter, EnumString, IntoStaticStr};
 
     #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
-    #[derive(IntoStaticStr, EnumString)]
+    #[derive(IntoStaticStr, EnumString, EnumIter)]
     #[derive(AsExpression, FromSqlRow)]
     #[diesel(sql_type = Text)]
     pub enum TrackerStat {
@@ -29,6 +29,24 @@ mod tracker_stat {
         fn as_ref(&self) -> &str {
             // IntoStaticStr should handle this
             self.into()
+        }
+    }
+
+    impl TrackerStat {
+        pub fn is_monthly_goal(&self) -> bool {
+            match self {
+                Self::PersonnelSaved => true,
+            }
+        }
+
+        pub fn as_str(&self) -> &'static str {
+            self.into()
+        }
+
+        pub fn as_display_name(&self) -> &'static str {
+            match self {
+                Self::PersonnelSaved => "Personnel Saved",
+            }
         }
     }
 
