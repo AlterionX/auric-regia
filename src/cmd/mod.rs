@@ -33,12 +33,6 @@ pub enum RequestArgs<'a> {
     IndustryProfitCheck(industry::profit::check::Request),
     IndustryProfitScoreboard(industry::profit::scoreboard::Request<'a>),
     IndustryProfitClearUnknown(industry::profit::clear::Request),
-    IndustrySavedPersonnelRecord(lib::generic_tracker::record::Request),
-    IndustrySavedPersonnelDelete(lib::generic_tracker::delete::Request),
-    IndustrySavedPersonnelBoast(lib::generic_tracker::boast::Request),
-    IndustrySavedPersonnelCheck(lib::generic_tracker::check::Request),
-    IndustrySavedPersonnelScoreboard(lib::generic_tracker::scoreboard::Request<'a>),
-    IndustrySavedPersonnelClearUnknown(lib::generic_tracker::clear::Request),
 
     // Dummy variants needed for the request kind enum, these are
     // subsumed into the ones below.
@@ -72,6 +66,13 @@ pub enum RequestArgs<'a> {
     MonthlyGoalSet(monthly_goal::set::Request<'a>),
     MonthlyGoalClear(monthly_goal::clear::Request<'a>),
     MonthlyGoalAdminList(monthly_goal::admin_list::Request<'a>),
+
+    MonthlyGoalProgressRecord(lib::generic_tracker::record::Request),
+    MonthlyGoalProgressDelete(lib::generic_tracker::delete::Request),
+    MonthlyGoalProgressBoast(lib::generic_tracker::boast::Request),
+    MonthlyGoalProgressCheck(lib::generic_tracker::check::Request),
+    MonthlyGoalProgressScoreboard(lib::generic_tracker::scoreboard::Request<'a>),
+    MonthlyGoalProgressClearUnknown(lib::generic_tracker::clear::Request),
 }
 
 impl DiscordCommandDescriptor for RequestKind {
@@ -113,24 +114,6 @@ impl DiscordCommandDescriptor for RequestKind {
                 "scoreboard"
             },
             RequestKind::IndustryProfitClearUnknown => {
-                "clear_unknown"
-            },
-            RequestKind::IndustrySavedPersonnelRecord => {
-                "record"
-            },
-            RequestKind::IndustrySavedPersonnelDelete => {
-                "delete"
-            },
-            RequestKind::IndustrySavedPersonnelBoast => {
-                "boast"
-            },
-            RequestKind::IndustrySavedPersonnelCheck => {
-                "check"
-            },
-            RequestKind::IndustrySavedPersonnelScoreboard => {
-                "scoreboard"
-            },
-            RequestKind::IndustrySavedPersonnelClearUnknown => {
                 "clear_unknown"
             },
 
@@ -210,6 +193,25 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::MonthlyGoalAdminList => {
                 "admin_list"
             },
+
+            RequestKind::MonthlyGoalProgressRecord => {
+                "record"
+            },
+            RequestKind::MonthlyGoalProgressDelete => {
+                "delete"
+            },
+            RequestKind::MonthlyGoalProgressBoast => {
+                "boast"
+            },
+            RequestKind::MonthlyGoalProgressCheck => {
+                "check"
+            },
+            RequestKind::MonthlyGoalProgressScoreboard => {
+                "scoreboard"
+            },
+            RequestKind::MonthlyGoalProgressClearUnknown => {
+                "clear_unknown"
+            },
         }
     }
 
@@ -251,22 +253,22 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::IndustryProfitClearUnknown => {
                 "Removes old unknown users from the scoreboard"
             },
-            RequestKind::IndustrySavedPersonnelRecord => {
+            RequestKind::MonthlyGoalProgressRecord => {
                 "Record saved personnel"
             },
-            RequestKind::IndustrySavedPersonnelDelete => {
+            RequestKind::MonthlyGoalProgressDelete => {
                 "Delete saved personnel"
             },
-            RequestKind::IndustrySavedPersonnelBoast => {
+            RequestKind::MonthlyGoalProgressBoast => {
                 "Boast about your saved personnel"
             },
-            RequestKind::IndustrySavedPersonnelCheck => {
+            RequestKind::MonthlyGoalProgressCheck => {
                 "Checks someone's (or your own) saved personnel count"
             },
-            RequestKind::IndustrySavedPersonnelScoreboard => {
+            RequestKind::MonthlyGoalProgressScoreboard => {
                 "Creates the scoreboard of saved personnel across Auric"
             },
-            RequestKind::IndustrySavedPersonnelClearUnknown => {
+            RequestKind::MonthlyGoalProgressClearUnknown => {
                 "Removes old unknown users from the scoreboard"
             },
 
@@ -481,7 +483,7 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::IndustryProfitClearUnknown => {
                 vec![]
             },
-            RequestKind::IndustrySavedPersonnelRecord => {
+            RequestKind::MonthlyGoalProgressRecord => {
                 vec![
                     RawCommandOptionEntry::Integer {
                         name: "saved_personnel",
@@ -495,7 +497,7 @@ impl DiscordCommandDescriptor for RequestKind {
                     },
                 ]
             },
-            RequestKind::IndustrySavedPersonnelDelete => {
+            RequestKind::MonthlyGoalProgressDelete => {
                 vec![
                     RawCommandOptionEntry::Integer {
                         name: "saved_personnel",
@@ -509,10 +511,10 @@ impl DiscordCommandDescriptor for RequestKind {
                     },
                 ]
             },
-            RequestKind::IndustrySavedPersonnelBoast => {
+            RequestKind::MonthlyGoalProgressBoast => {
                 vec![]
             },
-            RequestKind::IndustrySavedPersonnelCheck => {
+            RequestKind::MonthlyGoalProgressCheck => {
                 vec![
                     RawCommandOptionEntry::User {
                         name: "user",
@@ -521,7 +523,7 @@ impl DiscordCommandDescriptor for RequestKind {
                     },
                 ]
             },
-            RequestKind::IndustrySavedPersonnelScoreboard => {
+            RequestKind::MonthlyGoalProgressScoreboard => {
                 vec![
                     RawCommandOptionEntry::Integer {
                         name: "limit",
@@ -552,7 +554,7 @@ impl DiscordCommandDescriptor for RequestKind {
                     },
                 ]
             },
-            RequestKind::IndustrySavedPersonnelClearUnknown => {
+            RequestKind::MonthlyGoalProgressClearUnknown => {
                 vec![]
             },
 
@@ -924,41 +926,6 @@ impl DiscordCommandDescriptor for RequestKind {
                     return Err(RequestError::Internal("Missing options for `industry`.".into()));
                 };
                 match tier1.name {
-                    "saved_personnel" => {
-                        let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
-                            return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
-                        };
-                        let Some(tier2) = tier1_options.first() else {
-                            return Err(RequestError::Internal("Missing options for `industry saved_personnel`.".into()));
-                        };
-                        let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
-                            return Err(RequestError::Internal("Missing subcommand for `industry saved_personnel`.".into()));
-                        };
-                        match tier2.name {
-                            "record" => {
-                                Ok(RequestArgs::IndustrySavedPersonnelRecord(lib::generic_tracker::record::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
-                            },
-                            "delete" => {
-                                Ok(RequestArgs::IndustrySavedPersonnelDelete(lib::generic_tracker::delete::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
-                            },
-                            "boast" => {
-                                Ok(RequestArgs::IndustrySavedPersonnelBoast(lib::generic_tracker::boast::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, &[])?))
-                            },
-                            "check" => {
-                                Ok(RequestArgs::IndustrySavedPersonnelCheck(lib::generic_tracker::check::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
-                            },
-                            "scoreboard" => {
-                                Ok(RequestArgs::IndustrySavedPersonnelScoreboard(lib::generic_tracker::scoreboard::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
-                            },
-                            "clear_unknown" => {
-                                Ok(RequestArgs::IndustrySavedPersonnelClearUnknown(lib::generic_tracker::clear::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, &[])?))
-                            },
-                            _ => {
-                                trc::warn!("Unknown subcommand {:?}", tier1);
-                                Err(RequestError::Internal("Unknown subcommand for `industry saved_personnel`".into()))
-                            },
-                        }
-                    },
                     "profit" => {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
                             return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
@@ -1182,6 +1149,41 @@ impl DiscordCommandDescriptor for RequestKind {
                         };
                         Ok(RequestArgs::MonthlyGoalAdminList(monthly_goal::admin_list::Request::parse(cmd, tier1_options.as_slice())?))
                     },
+                    "progress" => {
+                        let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
+                            return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
+                        };
+                        let Some(tier2) = tier1_options.first() else {
+                            return Err(RequestError::Internal("Missing options for `industry saved_personnel`.".into()));
+                        };
+                        let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
+                            return Err(RequestError::Internal("Missing subcommand for `industry saved_personnel`.".into()));
+                        };
+                        match tier2.name {
+                            "record" => {
+                                Ok(RequestArgs::MonthlyGoalProgressRecord(lib::generic_tracker::record::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                            },
+                            "delete" => {
+                                Ok(RequestArgs::MonthlyGoalProgressDelete(lib::generic_tracker::delete::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                            },
+                            "boast" => {
+                                Ok(RequestArgs::MonthlyGoalProgressBoast(lib::generic_tracker::boast::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, &[])?))
+                            },
+                            "check" => {
+                                Ok(RequestArgs::MonthlyGoalProgressCheck(lib::generic_tracker::check::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                            },
+                            "scoreboard" => {
+                                Ok(RequestArgs::MonthlyGoalProgressScoreboard(lib::generic_tracker::scoreboard::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, tier2_options.as_slice())?))
+                            },
+                            "clear_unknown" => {
+                                Ok(RequestArgs::MonthlyGoalProgressClearUnknown(lib::generic_tracker::clear::Request::parse(cmd, crate::db::TrackerStat::PersonnelSaved, &[])?))
+                            },
+                            _ => {
+                                trc::warn!("Unknown subcommand {:?}", tier1);
+                                Err(RequestError::Internal("Unknown subcommand for `industry saved_personnel`".into()))
+                            },
+                        }
+                    },
                     _ => {
                         trc::warn!("Unknown subcommand {:?}", tier1);
                         Err(RequestError::Internal("Unknown subcommand for `legion kill`".into()))
@@ -1214,6 +1216,25 @@ impl <'a> DiscordCommandArgs for RequestArgs<'a> {
                 req.execute(ctx).await
             },
 
+            RequestArgs::MonthlyGoalProgressRecord(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::MonthlyGoalProgressDelete(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::MonthlyGoalProgressBoast(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::MonthlyGoalProgressCheck(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::MonthlyGoalProgressScoreboard(req) => {
+                req.execute(ctx).await
+            },
+            RequestArgs::MonthlyGoalProgressClearUnknown(req) => {
+                req.execute(ctx).await
+            },
+
             RequestArgs::IndustryMiningRockRecord => {
                 ctx.reply("Industry mining number crunching not yet implemented.".to_owned()).await
             },
@@ -1234,25 +1255,6 @@ impl <'a> DiscordCommandArgs for RequestArgs<'a> {
                 req.execute(ctx).await
             },
             RequestArgs::IndustryProfitClearUnknown(req) => {
-                req.execute(ctx).await
-            },
-
-            RequestArgs::IndustrySavedPersonnelRecord(req) => {
-                req.execute(ctx).await
-            },
-            RequestArgs::IndustrySavedPersonnelDelete(req) => {
-                req.execute(ctx).await
-            },
-            RequestArgs::IndustrySavedPersonnelBoast(req) => {
-                req.execute(ctx).await
-            },
-            RequestArgs::IndustrySavedPersonnelCheck(req) => {
-                req.execute(ctx).await
-            },
-            RequestArgs::IndustrySavedPersonnelScoreboard(req) => {
-                req.execute(ctx).await
-            },
-            RequestArgs::IndustrySavedPersonnelClearUnknown(req) => {
                 req.execute(ctx).await
             },
 
@@ -1366,18 +1368,6 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
                     ],
                 },
                 CommandTreeIntermediate {
-                    name: "saved_personnel",
-                    description: "Commands for managing saved personnel records",
-                    children: vec![
-                        RequestKind::IndustrySavedPersonnelRecord,
-                        RequestKind::IndustrySavedPersonnelDelete,
-                        RequestKind::IndustrySavedPersonnelBoast,
-                        RequestKind::IndustrySavedPersonnelCheck,
-                        RequestKind::IndustrySavedPersonnelScoreboard,
-                        RequestKind::IndustrySavedPersonnelClearUnknown,
-                    ],
-                },
-                CommandTreeIntermediate {
                     name: "profit",
                     description: "Commands for managing profit records",
                     children: vec![
@@ -1459,7 +1449,20 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
                 RequestKind::MonthlyGoalClear,
                 RequestKind::MonthlyGoalAdminList,
             ],
-            subcommand_groups: vec![],
+            subcommand_groups: vec![
+                CommandTreeIntermediate {
+                    name: "progress",
+                    description: "Commands for managing records around goal progress",
+                    children: vec![
+                        RequestKind::MonthlyGoalProgressRecord,
+                        RequestKind::MonthlyGoalProgressDelete,
+                        RequestKind::MonthlyGoalProgressBoast,
+                        RequestKind::MonthlyGoalProgressCheck,
+                        RequestKind::MonthlyGoalProgressScoreboard,
+                        RequestKind::MonthlyGoalProgressClearUnknown,
+                    ],
+                },
+            ],
         },
     ]
 }
