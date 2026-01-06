@@ -759,7 +759,7 @@ impl DiscordCommandDescriptor for RequestKind {
                         name: "progress",
                         description: "Progress of the goal, up to 100",
                         required: false,
-                        max: 100,
+                        max: 100_000_000,
                         min: 0,
                     },
                     RawCommandOptionEntry::String {

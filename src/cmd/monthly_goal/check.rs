@@ -121,7 +121,7 @@ impl<'a> Request<'a> {
             return Ok(());
         }
 
-        let all_progress = main_data.iter().map(|goal| goal.progress as f64)
+        let all_progress: usize = main_data.iter().map(|goal| goal.progress as f64)
             .chain(branch_data.iter().map(|(_branch, (progress, total_progress))| 100. * (*progress as f64 / *total_progress as f64)))
             .map(|progress| progress.min(100.) as usize)
             .sum();
@@ -134,7 +134,12 @@ impl<'a> Request<'a> {
                 Progress ({:.2}%): ```ansi\n{}\n```\n\
             ",
             (all_progress as f64 / total_possible_progress as f64).clamp(0., 1.) * 100.,
-            progrs_bar::Bar::new(all_progress, total_possible_progress.max(1)).generate_string(25, fetch_branch_color("main"))
+            progrs_bar::Bar::new(
+                all_progress.min(
+                    total_possible_progress.max(1)
+                ),
+                total_possible_progress.max(1)
+            ).generate_string(25, fetch_branch_color("main"))
         ))
             .chain(self.show_branches.then(|| branch_data.into_iter().map(|(branch_name, (branch_progress, branch_goals_count))| {
                 format!(
@@ -146,7 +151,9 @@ impl<'a> Request<'a> {
                     fetch_branch_display_name(branch_name.as_str()),
                     (branch_progress as f64 / (branch_goals_count * 100).max(1) as f64).clamp(0., 1.) * 100.,
                     progrs_bar::Bar::new(
-                        usize::try_from(branch_progress).unwrap_or(0),
+                        usize::try_from(branch_progress).unwrap_or(0).min(
+                            usize::try_from((branch_goals_count * 100).max(1)).unwrap_or(1),
+                        ),
                         usize::try_from((branch_goals_count * 100).max(1)).unwrap_or(1),
                     ).generate_string(25, fetch_branch_color(branch_name.as_str())),
                 )
@@ -162,7 +169,12 @@ impl<'a> Request<'a> {
                     goal.header,
                     goal.body,
                     goal.progress as f64,
-                    progrs_bar::Bar::new(usize::try_from(goal.progress).unwrap_or(0), 100).generate_string(25, fetch_branch_color(goal.tag.as_str())),
+                    progrs_bar::Bar::new(
+                        usize::try_from(goal.progress).unwrap_or(0).min(
+                            100
+                        ),
+                        100
+                    ).generate_string(25, fetch_branch_color(goal.tag.as_str())),
                 )
             })).into_flat_iter())
             .collect();
@@ -184,7 +196,7 @@ impl<'a> Request<'a> {
 
         let branch_color = fetch_branch_color(self.branch);
 
-        let all_progress = data.iter().map(|goal| usize::try_from(goal.progress).unwrap_or(0)).sum();
+        let all_progress: usize = data.iter().map(|goal| usize::try_from(goal.progress).unwrap_or(0)).sum();
         let total_possible_progress = 100 * data.len();
 
         let msg: String = std::iter::once(format!(
@@ -194,7 +206,10 @@ impl<'a> Request<'a> {
                 ",
                 fetch_branch_display_name(self.branch),
                 (all_progress as f64 / total_possible_progress as f64) * 100.,
-                progrs_bar::Bar::new(all_progress, total_possible_progress).generate_string(25, branch_color),
+                progrs_bar::Bar::new(
+                    all_progress.min(total_possible_progress),
+                    total_possible_progress
+                ).generate_string(25, branch_color),
             ))
             .chain(self.show_details.then(|| data.into_iter().map(|goal| {
                 format!(
@@ -207,7 +222,10 @@ impl<'a> Request<'a> {
                     goal.header,
                     goal.body,
                     goal.progress as f64,
-                    progrs_bar::Bar::new(usize::try_from(goal.progress).unwrap_or(0), 100).generate_string(25, branch_color),
+                    progrs_bar::Bar::new(
+                        usize::try_from(goal.progress).unwrap_or(0).min(100),
+                        100,
+                    ).generate_string(25, branch_color),
                 )
             })).into_flat_iter())
             .collect();
