@@ -741,6 +741,11 @@ impl DiscordCommandDescriptor for RequestKind {
                         description: "Whether to show additional detail (defaults to false), only applies if checking Main goals",
                         required: false,
                     },
+                    RawCommandOptionEntry::Boolean {
+                        name: "skip_progress",
+                        description: "whether to show progress bars",
+                        required: false,
+                    },
                 ]
             },
             RequestKind::MonthlyGoalSet => {

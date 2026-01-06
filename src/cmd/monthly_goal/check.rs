@@ -10,6 +10,7 @@ pub struct Request<'a> {
     branch: &'a str,
     show_details: bool,
     show_branches: bool,
+    skip_progress: bool,
 }
 
 impl<'a> Request<'a> {
@@ -17,32 +18,40 @@ impl<'a> Request<'a> {
         let mut branch = "main";
         let mut show_branches = false;
         let mut show_details = false;
+        let mut skip_progress = false;
         for opt in options {
             match opt.name {
                 "show_branches" => {
                     let ResolvedValue::Boolean(u) = opt.value else {
-                        trc::error!("Bad value for `show_branches` in `monthly_goal set` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `show_branches` in `monthly_goal set`.".into()));
+                        trc::error!("Bad value for `show_branches` in `monthly_goal check` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `show_branches` in `monthly_goal check`.".into()));
                     };
                     show_branches = u;
                 }
                 "show_details" => {
                     let ResolvedValue::Boolean(u) = opt.value else {
-                        trc::error!("Bad value for `show_details` in `monthly_goal set` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `show_details` in `monthly_goal set`.".into()));
+                        trc::error!("Bad value for `show_details` in `monthly_goal check` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `show_details` in `monthly_goal check`.".into()));
                     };
                     show_details = u;
                 }
                 "branch" => {
                     let ResolvedValue::String(u) = opt.value else {
-                        trc::error!("Bad value for `branch` in `monthly_goal set` {:?}", opt);
-                        return Err(RequestError::Internal("Bad value for `branch` in `monthly_goal set`.".into()));
+                        trc::error!("Bad value for `branch` in `monthly_goal check` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `branch` in `monthly_goal check`.".into()));
                     };
                     branch = u;
                 }
+                "skip_progress" => {
+                    let ResolvedValue::Boolean(u) = opt.value else {
+                        trc::error!("Bad value for `skip_progress` in `monthly_goal check` {:?}", opt);
+                        return Err(RequestError::Internal("Bad value for `branch` in `monthly_goal check`.".into()));
+                    };
+                    skip_progress = u;
+                }
                 _ => {
-                    trc::error!("Unknown option `{}` for `monthly_goal set`", opt.name);
-                    return Err(RequestError::Internal("Unknown option in `monthly_goal set`".into()));
+                    trc::error!("Unknown option `{}` for `monthly_goal check`", opt.name);
+                    return Err(RequestError::Internal("Unknown option in `monthly_goal check`".into()));
                 }
             }
         }
@@ -51,16 +60,48 @@ impl<'a> Request<'a> {
             branch,
             show_details,
             show_branches,
+            skip_progress,
         })
     }
 
     pub async fn execute(self, ctx: &ExecutionContext<'_>) -> Result<(), RequestError> {
         let guild_id = ctx.cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?;
-        if self.branch != "main" {
+        if self.skip_progress {
+            self.execute_simple_list(ctx, guild_id).await
+        } else if self.branch != "main" {
             self.execute_branch_summary(ctx, guild_id).await
         } else {
             self.execute_main_summary(ctx, guild_id).await
         }
+    }
+
+    pub async fn execute_simple_list(self, ctx: &ExecutionContext<'_>, guild_id: GuildId) -> Result<(), RequestError> {
+        let Ok(data) = db::MonthlyGoal::load_detailed_summary(&ctx.db_cfg, guild_id, self.branch).await else {
+            return Err(RequestError::Internal("Failed to load monthly goals.".into()));
+        };
+
+        if data.is_empty() {
+            ctx.reply_restricted("No goals have been set up!".to_owned()).await?;
+            return Ok(());
+        }
+
+        let msg: String = std::iter::once(format!("# Goals for {}\n", fetch_branch_display_name(self.branch)))
+            .chain(self.show_details.then(|| data.into_iter().map(|goal| {
+                format!(
+                    "\
+                        ## {}\n\
+                        {}\n\
+                        \n\
+                    ",
+                    goal.header,
+                    goal.body,
+                )
+            })).into_flat_iter())
+            .collect();
+
+        ctx.reply_restricted(msg).await?;
+
+        Ok(())
     }
 
     pub async fn execute_main_summary(self, ctx: &ExecutionContext<'_>, guild_id: GuildId) -> Result<(), RequestError> {
