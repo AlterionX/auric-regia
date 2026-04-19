@@ -1,30 +1,6 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    event_participation_count_changes (id) {
-        id -> Int8,
-        created -> Timestamptz,
-        updater -> Numeric,
-        target -> Numeric,
-        event_participation -> Numeric,
-        #[max_length = 10000]
-        user_note -> Nullable<Varchar>,
-        guild_id -> Numeric,
-    }
-}
-
-diesel::table! {
-    event_participation_counts (id) {
-        user_id -> Numeric,
-        created -> Timestamptz,
-        updated -> Timestamptz,
-        event_participation -> Numeric,
-        guild_id -> Numeric,
-        id -> Int8,
-    }
-}
-
-diesel::table! {
     industry_profit_count_changes (id) {
         id -> Int8,
         created -> Timestamptz,
@@ -143,6 +119,8 @@ diesel::table! {
         updater -> Numeric,
         target -> Numeric,
         total -> Numeric,
+        #[max_length = 10000]
+        user_note -> Nullable<Varchar>,
     }
 }
 
@@ -160,8 +138,6 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    event_participation_count_changes,
-    event_participation_counts,
     industry_profit_count_changes,
     industry_profit_counts,
     legion_kill_count_changes,
