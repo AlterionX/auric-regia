@@ -23,6 +23,8 @@ mod tracker_stat {
     pub enum TrackerStat {
         #[strum(serialize = "industry_personnel_saved")]
         PersonnelSaved,
+        #[strum(serialize = "event_participation")]
+        EventParticipation,
     }
 
     impl AsRef<str> for TrackerStat {
@@ -36,6 +38,7 @@ mod tracker_stat {
         pub fn is_monthly_goal(&self) -> bool {
             match self {
                 Self::PersonnelSaved => true,
+                Self::EventParticipation => false,
             }
         }
 
@@ -46,6 +49,7 @@ mod tracker_stat {
         pub fn as_command_opt_display_name(&self) -> &'static str {
             match self {
                 Self::PersonnelSaved => "Personnel Saved",
+                Self::EventParticipation => "Personnel Saved",
             }
         }
     }
@@ -66,6 +70,7 @@ mod tracker_stat {
         pub fn cmd_name(&self) -> &'static str {
             match self {
                 Self::PersonnelSaved => "monthly_goal progress",
+                Self::EventParticipation => "events participation",
             }
         }
     }
@@ -100,6 +105,7 @@ pub struct NewTrackerCountChange {
     pub updater: DiscordUserId,
     pub target: DiscordUserId,
     pub total: BigDecimal,
+    pub user_note: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -190,6 +196,7 @@ impl TrackerCount {
                 target: user_id,
                 total: -total,
                 guild_id,
+                user_note: None,
             }).collect::<Vec<_>>())
             .execute(&mut conn)
             .await
