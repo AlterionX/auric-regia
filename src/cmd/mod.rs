@@ -7,7 +7,7 @@ pub mod industry;
 pub mod event;
 pub mod monthly_goal;
 
-use std::str::FromStr;
+use std::{borrow::Cow, str::FromStr};
 
 use tracing as trc;
 
@@ -80,7 +80,7 @@ pub enum RequestArgs<'a> {
 impl DiscordCommandDescriptor for RequestKind {
     type Args<'a> = RequestArgs<'a>;
 
-    fn name(&self) -> &'static str {
+    fn name(&self) -> Cow<'static, str> {
         match self {
             RequestKind::Ping => {
                 "ping"
@@ -214,10 +214,10 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::MonthlyGoalProgressClearUnknown => {
                 "clear_unknown"
             },
-        }
+        }.into()
     }
 
-    fn description(&self) -> &'static str {
+    fn description(&self) -> Cow<'static, str> {
         match self {
             RequestKind::Ping => {
                 "Ping!"
@@ -350,7 +350,7 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::MonthlyGoalAdminList => {
                 "List out goals including shortnames"
             },
-        }
+        }.into()
     }
 
     fn options(&self) -> Vec<RawCommandOptionEntry> {
@@ -1425,15 +1425,15 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
     vec![
         CommandTreeTop::NakedChatInput(RequestKind::Ping, None),
         CommandTreeTop::Complex {
-            name: "event",
-            description: "Event commands",
+            name: "event".into(),
+            description: "Event commands".into(),
             kind: CommandType::ChatInput,
             opt_default_perm: None,
             subcommands: vec![],
             subcommand_groups: vec![
                 CommandTreeIntermediate {
-                    name: "participation",
-                    description: "Commands for tracking event participation",
+                    name: "participation".into(),
+                    description: "Commands for tracking event participation".into(),
                     children: vec![
                         RequestKind::EventParticipantRecord,
                         RequestKind::EventParticipantRemove,
@@ -1443,22 +1443,22 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
             ],
         },
         CommandTreeTop::Complex {
-            name: "industry",
-            description: "Industry commands",
+            name: "industry".into(),
+            description: "Industry commands".into(),
             kind: CommandType::ChatInput,
             opt_default_perm: None,
             subcommands: vec![],
             subcommand_groups: vec![
                 CommandTreeIntermediate {
-                    name: "mining",
-                    description: "Commands for mining data stashing",
+                    name: "mining".into(),
+                    description: "Commands for mining data stashing".into(),
                     children: vec![
                         RequestKind::IndustryMiningRockRecord,
                     ],
                 },
                 CommandTreeIntermediate {
-                    name: "profit",
-                    description: "Commands for managing profit records",
+                    name: "profit".into(),
+                    description: "Commands for managing profit records".into(),
                     children: vec![
                         RequestKind::IndustryProfitRecord,
                         RequestKind::IndustryProfitDelete,
@@ -1474,15 +1474,15 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
         CommandTreeTop::NakedUser(RequestKind::NavyVictoryRecordOneUser, None),
         CommandTreeTop::NakedUser(RequestKind::NavyVictoryCheckUser, None),
         CommandTreeTop::Complex {
-            name: "navy",
-            description: "Navy commands",
+            name: "navy".into(),
+            description: "Navy commands".into(),
             kind: CommandType::ChatInput,
             opt_default_perm: None,
             subcommands: vec![],
             subcommand_groups: vec![
                 CommandTreeIntermediate {
-                    name: "victory",
-                    description: "Commands for managing victory counts",
+                    name: "victory".into(),
+                    description: "Commands for managing victory counts".into(),
                     children: vec![
                         RequestKind::NavyVictoryRecord,
                         RequestKind::NavyVictoryDelete,
@@ -1493,8 +1493,8 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
                     ],
                 },
                 CommandTreeIntermediate {
-                    name: "tackle_assist",
-                    description: "Commands for managing tackle assist counts",
+                    name: "tackle_assist".into(),
+                    description: "Commands for managing tackle assist counts".into(),
                     children: vec![
                         RequestKind::NavyTackleAssistRecord,
                         RequestKind::NavyTackleAssistDelete,
@@ -1507,15 +1507,15 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
             ],
         },
         CommandTreeTop::Complex {
-            name: "legion",
-            description: "Legion commands",
+            name: "legion".into(),
+            description: "Legion commands".into(),
             kind: CommandType::ChatInput,
             opt_default_perm: None,
             subcommands: vec![],
             subcommand_groups: vec![
                 CommandTreeIntermediate {
-                    name: "kill",
-                    description: "Commands for managing kill counts",
+                    name: "kill".into(),
+                    description: "Commands for managing kill counts".into(),
                     children: vec![
                         RequestKind::LegionKillRecord,
                         RequestKind::LegionKillDelete,
@@ -1528,8 +1528,8 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
             ],
         },
         CommandTreeTop::Complex {
-            name: "monthly_goal",
-            description: "Commands for managing monthly goals",
+            name: "monthly_goal".into(),
+            description: "Commands for managing monthly goals".into(),
             kind: CommandType::ChatInput,
             opt_default_perm: None,
             subcommands: vec![
@@ -1540,8 +1540,8 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
             ],
             subcommand_groups: vec![
                 CommandTreeIntermediate {
-                    name: "progress",
-                    description: "Commands for managing records around goal progress",
+                    name: "progress".into(),
+                    description: "Commands for managing records around goal progress".into(),
                     children: vec![
                         RequestKind::MonthlyGoalProgressRecord,
                         RequestKind::MonthlyGoalProgressDelete,
@@ -1572,7 +1572,7 @@ mod test {
                     set.insert(*c);
                 }
             },
-            CommandTreeTop::GlobalMessageContextMenu(cmd, _) | CommandTreeTop::NakedUser(cmd, _) | CommandTreeTop::NakedChatInput(cmd, _) | CommandTreeTop::MessageContextMenu(cmd, _) => {
+            CommandTreeTop::NakedUser(cmd, _) | CommandTreeTop::NakedChatInput(cmd, _) | CommandTreeTop::MessageContextMenu(cmd, _) => {
                 assert!(!set.contains(cmd));
                 set.insert(*cmd);
             },
