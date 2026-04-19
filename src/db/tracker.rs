@@ -12,6 +12,7 @@ use azel::db::{Connector, DbResult};
 mod tracker_stat {
     use std::str::FromStr;
 
+    use bigdecimal::BigDecimal;
     use diesel::{deserialize::FromSqlRow, expression::AsExpression, pg::Pg, sql_types::Text};
     use diesel_pg_type_utils::impl_sql_convert;
     use strum::{EnumIter, EnumString, IntoStaticStr};
@@ -51,6 +52,51 @@ mod tracker_stat {
                 Self::PersonnelSaved => "Personnel Saved",
                 Self::EventParticipation => "Personnel Saved",
             }
+        }
+
+        pub fn denominator(&self) -> BigDecimal {
+            match self {
+                // Self::NavalVictory -> 4,
+                _ => 1,
+            }.into()
+        }
+
+        pub fn format_count(&self, db_value: BigDecimal) -> String {
+            let display_value = db_value / self.denominator();
+            let singular = display_value.is_one_quickcheck().unwrap_or(false);
+            let counter_text = match self {
+                Self::PersonnelSaved => "personnel saved",
+                Self::EventParticipation => if singular {
+                    "event"
+                } else {
+                    "events"
+                },
+            };
+
+            format!("{:.2} {}", display_value, counter_text)
+        }
+
+        pub fn format_count_as_past_participle(&self, db_value: BigDecimal) -> String {
+            let display_value = db_value / self.denominator();
+            let singular = display_value.is_one_quickcheck().unwrap_or(false);
+            let (past_participle, counter_text) = match self {
+                Self::PersonnelSaved => ("saved", "personnel"),
+                Self::EventParticipation => if singular {
+                    ("participated in", "event")
+                } else {
+                    ("participated in", "events")
+                },
+            };
+
+            format!("{} {:.2} {}", past_participle, display_value, counter_text)
+        }
+
+        pub fn display_value(&self, db_value: BigDecimal) -> BigDecimal {
+            db_value / self.denominator()
+        }
+
+        pub fn db_value(&self, display_value: BigDecimal) -> BigDecimal {
+            (display_value * self.denominator()).round(0)
         }
     }
 

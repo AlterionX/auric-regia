@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use bigdecimal::ToPrimitive;
 use tracing as trc;
 
 use serenity::all::{CommandInteraction, Mentionable, ResolvedOption, ResolvedValue};
@@ -212,14 +211,10 @@ impl<'a> Request<'a> {
 }
 
 fn append_row_for_stat(stat: TrackerStat, rank: i64, record: db::TrackerCount, buffer: &mut String) {
-    match stat {
-        TrackerStat::PersonnelSaved => {
-            buffer.push_str(format!(
-                "\t{}) {}: {} personnel saved\n",
-                rank,
-                record.user_id.inner().mention(),
-                record.total.to_u64().unwrap()
-            ).as_str());
-        },
-    }
+    buffer.push_str(format!(
+        "\t{}) {}: {}\n",
+        rank,
+        record.user_id.inner().mention(),
+        stat.format_count(record.total),
+    ).as_str());
 }

@@ -4,7 +4,6 @@ pub mod lib;
 pub mod navy;
 pub mod legion;
 pub mod industry;
-pub mod event;
 pub mod monthly_goal;
 
 use std::{borrow::Cow, str::FromStr};
@@ -23,9 +22,9 @@ use azel::{cmd::{CommandTreeTop, CommandTreeIntermediate, DiscordCommandArgs, Di
 pub enum RequestArgs<'a> {
     Ping,
 
-    EventParticipantRecord(event::participation::record::Request<'a>),
-    EventParticipantRemove(event::participation::remove::Request<'a>),
-    EventParticipantCheck(event::participation::check::Request),
+    EventParticipantRecord(lib::generic_tracker::record::Request),
+    EventParticipantRemove(lib::generic_tracker::delete::Request),
+    EventParticipantCheck(lib::generic_tracker::check::Request),
 
     IndustryMiningRockRecord,
 
@@ -977,13 +976,13 @@ impl DiscordCommandDescriptor for RequestKind {
                         };
                         match tier2.name {
                             "record" => {
-                                Ok(RequestArgs::EventParticipantRecord(event::participation::record::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::EventParticipantRecord(lib::generic_tracker::record::Request::parse(cmd, crate::db::TrackerStat::EventParticipation, tier2_options.as_slice())?))
                             },
                             "remove" => {
-                                Ok(RequestArgs::EventParticipantRemove(event::participation::remove::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::EventParticipantRemove(lib::generic_tracker::delete::Request::parse(cmd, crate::db::TrackerStat::EventParticipation, tier2_options.as_slice())?))
                             },
                             "check" => {
-                                Ok(RequestArgs::EventParticipantCheck(event::participation::check::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::EventParticipantCheck(lib::generic_tracker::check::Request::parse(cmd, crate::db::TrackerStat::EventParticipation, tier2_options.as_slice())?))
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);

@@ -33,9 +33,9 @@ impl Request {
 }
 
 fn format_stat_for_boast(stat: TrackerStat, user_id: DiscordUserId, total: Option<BigDecimal>) -> String {
-    match stat {
-        TrackerStat::PersonnelSaved => {
-            format!("@here {} has saved {} personnel!", user_id.inner().mention(), total.unwrap_or_default())
-        },
-    }
+    format!(
+        "@here {} has {}!",
+        user_id.inner().mention(),
+        stat.format_count_as_past_participle(total.unwrap_or_default()),
+    )
 }

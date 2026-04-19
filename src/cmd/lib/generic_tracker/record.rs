@@ -66,6 +66,7 @@ impl Request {
             updater: ctx.cmd.user.id.into(),
             target: user_id,
             total: total.clone(),
+            user_note: None,
         };
 
         let new_total = match db::TrackerCount::adjust_count(&ctx.db_cfg, change).await {
@@ -81,9 +82,10 @@ impl Request {
 }
 
 fn format_delete_for_stat(stat: TrackerStat, user_id: DiscordUserId, delta: BigDecimal, new_total: BigDecimal) -> String {
-    match stat {
-        TrackerStat::PersonnelSaved => {
-            format!("Added {} saved personnel to {} (total {}).", delta, user_id.inner().mention(), new_total)
-        },
-    }
+    format!(
+        "Added {} to {} (total {}).",
+        stat.format_count(delta),
+        user_id.inner().mention(),
+        stat.display_value(new_total),
+    )
 }
