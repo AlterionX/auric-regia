@@ -1,28 +1,6 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    industry_profit_count_changes (id) {
-        id -> Int8,
-        created -> Timestamptz,
-        updater -> Numeric,
-        target -> Numeric,
-        alpha_united_earth_credits -> Numeric,
-        guild_id -> Numeric,
-    }
-}
-
-diesel::table! {
-    industry_profit_counts (id) {
-        user_id -> Numeric,
-        created -> Timestamptz,
-        updated -> Timestamptz,
-        alpha_united_earth_credits -> Numeric,
-        guild_id -> Numeric,
-        id -> Int8,
-    }
-}
-
-diesel::table! {
     legion_kill_count_changes (id) {
         id -> Int8,
         created -> Timestamptz,
@@ -138,8 +116,6 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    industry_profit_count_changes,
-    industry_profit_counts,
     legion_kill_count_changes,
     legion_kill_counts,
     monthly_goals,

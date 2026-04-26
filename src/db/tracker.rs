@@ -26,6 +26,8 @@ mod tracker_stat {
         PersonnelSaved,
         #[strum(serialize = "event_participation")]
         EventParticipation,
+        #[strum(serialize = "industry_auec")]
+        IndustryAuec,
     }
 
     impl AsRef<str> for TrackerStat {
@@ -40,6 +42,7 @@ mod tracker_stat {
             match self {
                 Self::PersonnelSaved => true,
                 Self::EventParticipation => false,
+                Self::IndustryAuec => false,
             }
         }
 
@@ -50,7 +53,8 @@ mod tracker_stat {
         pub fn as_command_opt_display_name(&self) -> &'static str {
             match self {
                 Self::PersonnelSaved => "Personnel Saved",
-                Self::EventParticipation => "Personnel Saved",
+                Self::EventParticipation => "Event Participation",
+                Self::IndustryAuec => "Industry Profit",
             }
         }
 
@@ -71,6 +75,11 @@ mod tracker_stat {
                 } else {
                     "events"
                 },
+                Self::IndustryAuec => if singular {
+                    "credit"
+                } else {
+                    "credits"
+                },
             };
 
             format!("{:.2} {}", display_value, counter_text)
@@ -85,6 +94,11 @@ mod tracker_stat {
                     ("participated in", "event")
                 } else {
                     ("participated in", "events")
+                },
+                Self::IndustryAuec => if singular {
+                    ("contributed", "credit")
+                } else {
+                    ("contributed", "credits")
                 },
             };
 
@@ -117,6 +131,7 @@ mod tracker_stat {
             match self {
                 Self::PersonnelSaved => "monthly_goal progress",
                 Self::EventParticipation => "events participation",
+                Self::IndustryAuec => "industry profit",
             }
         }
     }

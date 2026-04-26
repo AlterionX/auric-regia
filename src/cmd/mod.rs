@@ -3,7 +3,6 @@ pub mod lib;
 
 pub mod navy;
 pub mod legion;
-pub mod industry;
 pub mod monthly_goal;
 
 use std::{borrow::Cow, str::FromStr};
@@ -28,12 +27,12 @@ pub enum RequestArgs<'a> {
 
     IndustryMiningRockRecord,
 
-    IndustryProfitRecord(industry::profit::record::Request),
-    IndustryProfitDelete(industry::profit::delete::Request),
-    IndustryProfitBoast(industry::profit::boast::Request),
-    IndustryProfitCheck(industry::profit::check::Request),
-    IndustryProfitScoreboard(industry::profit::scoreboard::Request<'a>),
-    IndustryProfitClearUnknown(industry::profit::clear::Request),
+    IndustryProfitRecord(lib::generic_tracker::record::Request),
+    IndustryProfitDelete(lib::generic_tracker::delete::Request),
+    IndustryProfitBoast(lib::generic_tracker::boast::Request),
+    IndustryProfitCheck(lib::generic_tracker::check::Request),
+    IndustryProfitScoreboard(lib::generic_tracker::scoreboard::Request<'a>),
+    IndustryProfitClearUnknown(lib::generic_tracker::clear::Request),
 
     // Dummy variants needed for the request kind enum, these are
     // subsumed into the ones below.
@@ -1013,22 +1012,22 @@ impl DiscordCommandDescriptor for RequestKind {
                         };
                         match tier2.name {
                             "record" => {
-                                Ok(RequestArgs::IndustryProfitRecord(industry::profit::record::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::IndustryProfitRecord(lib::generic_tracker::record::Request::parse(cmd, crate::db::TrackerStat::IndustryAuec, tier2_options.as_slice())?))
                             },
                             "delete" => {
-                                Ok(RequestArgs::IndustryProfitDelete(industry::profit::delete::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::IndustryProfitDelete(lib::generic_tracker::delete::Request::parse(cmd, crate::db::TrackerStat::IndustryAuec, tier2_options.as_slice())?))
                             },
                             "boast" => {
-                                Ok(RequestArgs::IndustryProfitBoast(industry::profit::boast::Request::parse(cmd, &[])?))
+                                Ok(RequestArgs::IndustryProfitBoast(lib::generic_tracker::boast::Request::parse(cmd, crate::db::TrackerStat::IndustryAuec, &[])?))
                             },
                             "check" => {
-                                Ok(RequestArgs::IndustryProfitCheck(industry::profit::check::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::IndustryProfitCheck(lib::generic_tracker::check::Request::parse(cmd, crate::db::TrackerStat::IndustryAuec, tier2_options.as_slice())?))
                             },
                             "scoreboard" => {
-                                Ok(RequestArgs::IndustryProfitScoreboard(industry::profit::scoreboard::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::IndustryProfitScoreboard(lib::generic_tracker::scoreboard::Request::parse(cmd, crate::db::TrackerStat::IndustryAuec, tier2_options.as_slice())?))
                             },
                             "clear_unknown" => {
-                                Ok(RequestArgs::IndustryProfitClearUnknown(industry::profit::clear::Request::parse(cmd, &[])?))
+                                Ok(RequestArgs::IndustryProfitClearUnknown(lib::generic_tracker::clear::Request::parse(cmd, crate::db::TrackerStat::IndustryAuec, &[])?))
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);

@@ -52,12 +52,5 @@ impl Request {
 fn format_stat_for_check(stat: TrackerStat, user_id: DiscordUserId, total: Option<BigDecimal>) -> String {
     let mention = user_id.inner().mention();
     let total = total.unwrap_or_default();
-    match stat {
-        TrackerStat::PersonnelSaved => {
-            format!("We have {} saved personnel recorded for {}.", total, mention)
-        },
-        TrackerStat::EventParticipation => {
-            format!("We have {} event(s) recorded for {}.", total, mention)
-        },
-    }
+    format!("We have {} recorded for {}.", stat.format_count(total), mention)
 }

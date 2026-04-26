@@ -1,12 +1,10 @@
 mod navy;
 mod legion;
-mod industry;
 mod monthly_goal;
 mod tracker;
 
 pub use navy::*;
 pub use legion::*;
-pub use industry::*;
 pub use monthly_goal::*;
 pub use tracker::*;
 
