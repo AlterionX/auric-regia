@@ -12,7 +12,7 @@ SELECT
     guild_id,
     updater,
     target,
-    total
+    alpha_united_earth_credits
 FROM industry_profit_count_changes;
 
 INSERT INTO tracker_counts (
@@ -29,7 +29,7 @@ SELECT
     'industry_auec' AS stat,
     guild_id,
     user_id,
-    total
+    alpha_united_earth_credits
 FROM industry_profit_counts;
 
 DROP INDEX unique_industry_profit_count_per_guild_per_user;
