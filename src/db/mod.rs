@@ -1,10 +1,6 @@
-mod navy;
-mod legion;
 mod monthly_goal;
 mod tracker;
 
-pub use navy::*;
-pub use legion::*;
 pub use monthly_goal::*;
 pub use tracker::*;
 

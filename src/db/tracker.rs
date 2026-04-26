@@ -28,6 +28,12 @@ mod tracker_stat {
         EventParticipation,
         #[strum(serialize = "industry_auec")]
         IndustryAuec,
+        #[strum(serialize = "human_kill")]
+        GroundKill,
+        #[strum(serialize = "navy_victory")]
+        NavyVictory,
+        #[strum(serialize = "tackle_assist")]
+        NavyTackleAssist,
     }
 
     impl AsRef<str> for TrackerStat {
@@ -43,6 +49,9 @@ mod tracker_stat {
                 Self::PersonnelSaved => true,
                 Self::EventParticipation => false,
                 Self::IndustryAuec => false,
+                Self::GroundKill => false,
+                Self::NavyVictory => false,
+                Self::NavyTackleAssist => false,
             }
         }
 
@@ -55,12 +64,15 @@ mod tracker_stat {
                 Self::PersonnelSaved => "Personnel Saved",
                 Self::EventParticipation => "Event Participation",
                 Self::IndustryAuec => "Industry Profit",
+                Self::GroundKill => "Ground Kill",
+                Self::NavyVictory => "Navy Victory",
+                Self::NavyTackleAssist => "Navy Tackle Assist",
             }
         }
 
         pub fn denominator(&self) -> BigDecimal {
             match self {
-                // Self::NavalVictory -> 4,
+                Self::NavyVictory => 4,
                 _ => 1,
             }.into()
         }
@@ -80,6 +92,21 @@ mod tracker_stat {
                 } else {
                     "credits"
                 },
+                Self::GroundKill => if singular {
+                    "kill"
+                } else {
+                    "kills"
+                },
+                Self::NavyVictory => if singular {
+                    "victory"
+                } else {
+                    "victories"
+                },
+                Self::NavyTackleAssist => if singular {
+                    "tackle assist"
+                } else {
+                    "tackle assists"
+                },
             };
 
             format!("{:.2} {}", display_value, counter_text)
@@ -91,18 +118,33 @@ mod tracker_stat {
             let (past_participle, counter_text) = match self {
                 Self::PersonnelSaved => ("saved", "personnel"),
                 Self::EventParticipation => if singular {
-                    ("participated in", "event")
+                    ("participated in ", "event")
                 } else {
-                    ("participated in", "events")
+                    ("participated in ", "events")
                 },
                 Self::IndustryAuec => if singular {
-                    ("contributed", "credit")
+                    ("contributed ", "credit")
                 } else {
-                    ("contributed", "credits")
+                    ("contributed ", "credits")
+                },
+                Self::GroundKill => if singular {
+                    ("", "confirmed kill")
+                } else {
+                    ("", "confirmed kills")
+                },
+                Self::NavyVictory => if singular {
+                    ("earned ", "victory")
+                } else {
+                    ("earned ", "victories")
+                },
+                Self::NavyTackleAssist => if singular {
+                    ("earned ", "tackle assist")
+                } else {
+                    ("earned ", "tackle assists")
                 },
             };
 
-            format!("{} {:.2} {}", past_participle, display_value, counter_text)
+            format!("{}{:.2} {}", past_participle, display_value, counter_text)
         }
 
         pub fn display_value(&self, db_value: BigDecimal) -> BigDecimal {
@@ -132,7 +174,21 @@ mod tracker_stat {
                 Self::PersonnelSaved => "monthly_goal progress",
                 Self::EventParticipation => "events participation",
                 Self::IndustryAuec => "industry profit",
+                Self::GroundKill => "ground kill",
+                Self::NavyVictory => "navy victory",
+                Self::NavyTackleAssist => "navy tackle_assist",
             }
+        }
+
+        pub fn default_add_remove_total(&self) -> BigDecimal {
+            match self {
+                Self::PersonnelSaved => 1,
+                Self::EventParticipation => 1,
+                Self::IndustryAuec => 1,
+                Self::GroundKill => 1,
+                Self::NavyVictory => 4,
+                Self::NavyTackleAssist => 1,
+            }.into()
         }
     }
 

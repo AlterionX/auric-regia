@@ -1,4 +1,4 @@
-use bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal, FromPrimitive, Signed};
 use tracing as trc;
 
 use serenity::all::{CommandInteraction, Mentionable, ResolvedOption, ResolvedValue};
@@ -19,40 +19,52 @@ impl Request {
     pub fn parse(cmd: &CommandInteraction, stat: TrackerStat, options: &[ResolvedOption]) -> Result<Self, RequestError> {
         let guild_id = cmd.guild_id.ok_or_else(|| RequestError::User("Command must be run from within a guild.".into()))?.into();
 
-        let mut total = 1;
+        let mut total = stat.default_add_remove_total();
         let mut user_id = cmd.user.id;
         for opt in options {
             match opt.name {
                 "stat" => {},
                 "total" => {
-                    let ResolvedValue::Integer(k) = opt.value else {
-                        trc::error!("Bad value for `total` in `{} delete` {:?}", stat.cmd_name(), opt);
-                        return Err(RequestError::Internal(format!("Bad value for `total` in `{} delete`.", stat.cmd_name()).into()));
+                    let k: BigDecimal = match opt.value {
+                        ResolvedValue::Integer(k) => k.into(),
+                        ResolvedValue::Number(k) => match BigDecimal::from_f64(k) {
+                            Some(k) => k,
+                            None => {
+                                trc::error!("Bad value for `total` in `{} record` {:?}", stat.cmd_name(), opt);
+                                return Err(RequestError::Internal(format!("Bad value for `total` in `{} record`.", stat.cmd_name()).into()));
+                            },
+                        },
+                        _ => {
+                            trc::error!("Bad value for `total` in `{} record` {:?}", stat.cmd_name(), opt);
+                            return Err(RequestError::Internal(format!("Bad value for `total` in `{} record`.", stat.cmd_name()).into()));
+                        },
                     };
-                    if k < 0 {
-                        trc::error!("Bad value for `total` in `{} delete` {:?}", stat.cmd_name(), opt);
-                        return Err(RequestError::User(format!("Negative value for `total` in `{} delete`. Were you looking for `{} record`?", stat.cmd_name(), stat.cmd_name()).into()));
+                    if k.is_negative() {
+                        trc::error!("Bad value for `total` in `{} record` {:?}", stat.cmd_name(), opt);
+                        return Err(RequestError::User(format!("Negative value for `total` in `{} record`. Were you looking for `{} delete`?", stat.cmd_name(), stat.cmd_name()).into()));
                     }
                     total = k;
                 }
                 "user" => {
                     let ResolvedValue::User(u, _) = opt.value else {
-                        trc::error!("Bad value for `user` in `{} delete` {:?}", stat.cmd_name(), opt);
-                        return Err(RequestError::Internal(format!("Bad value for `user` in `{} delete`.", stat.cmd_name()).into()));
+                        trc::error!("Bad value for `user` in `{} record` {:?}", stat.cmd_name(), opt);
+                        return Err(RequestError::Internal(format!("Bad value for `user` in `{} record`.", stat.cmd_name()).into()));
                     };
                     user_id = u.id;
                 }
                 _ => {
-                    trc::error!("Unknown option `{}` for `{} delete`", stat.cmd_name(), opt.name);
-                    return Err(RequestError::Internal(format!("Unknown option in `{} delete`", stat.cmd_name()).into()));
+                    trc::error!("Unknown option `{}` for `{} record`", stat.cmd_name(), opt.name);
+                    return Err(RequestError::Internal(format!("Unknown option in `{} record`", stat.cmd_name()).into()));
                 }
             }
         }
         let user_id = user_id.into();
 
+        total *= stat.denominator();
+
         Ok(Self {
             stat,
-            total: BigDecimal::from(total),
+            total,
             user_id,
             guild_id,
         })
@@ -72,16 +84,16 @@ impl Request {
         let new_total = match db::TrackerCount::adjust_count(&ctx.db_cfg, change).await {
             Ok(new_total) => new_total,
             Err(e) => {
-                trc::error!("Failed to update count for {} delete. {e:?}", stat.cmd_name());
+                trc::error!("Failed to update count for {} record. {e:?}", stat.cmd_name());
                 return Err(RequestError::Internal("Count update failed".into()));
             },
         };
 
-        ctx.reply(format_delete_for_stat(stat, user_id, total, new_total)).await
+        ctx.reply(format_record_for_stat(stat, user_id, total, new_total)).await
     }
 }
 
-fn format_delete_for_stat(stat: TrackerStat, user_id: DiscordUserId, delta: BigDecimal, new_total: BigDecimal) -> String {
+fn format_record_for_stat(stat: TrackerStat, user_id: DiscordUserId, delta: BigDecimal, new_total: BigDecimal) -> String {
     format!(
         "Added {} to {} (total {}).",
         stat.format_count(delta),

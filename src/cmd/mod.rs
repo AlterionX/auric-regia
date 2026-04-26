@@ -1,8 +1,6 @@
 // Things used for implementing most things.
 pub mod lib;
 
-pub mod navy;
-pub mod legion;
 pub mod monthly_goal;
 
 use std::{borrow::Cow, str::FromStr};
@@ -41,26 +39,26 @@ pub enum RequestArgs<'a> {
     #[allow(dead_code)]
     NavyVictoryCheckUser(!),
 
-    NavyVictoryRecord(navy::victory::record::Request),
-    NavyVictoryDelete(navy::victory::delete::Request),
-    NavyVictoryBoast(navy::victory::boast::Request),
-    NavyVictoryCheck(navy::victory::check::Request),
-    NavyVictoryScoreboard(navy::victory::scoreboard::Request<'a>),
-    NavyVictoryClearUnknown(navy::victory::clear::Request),
+    NavyVictoryRecord(lib::generic_tracker::record::Request),
+    NavyVictoryDelete(lib::generic_tracker::delete::Request),
+    NavyVictoryBoast(lib::generic_tracker::boast::Request),
+    NavyVictoryCheck(lib::generic_tracker::check::Request),
+    NavyVictoryScoreboard(lib::generic_tracker::scoreboard::Request<'a>),
+    NavyVictoryClearUnknown(lib::generic_tracker::clear::Request),
 
-    NavyTackleAssistRecord(navy::tackle_assist::record::Request),
-    NavyTackleAssistDelete(navy::tackle_assist::delete::Request),
-    NavyTackleAssistBoast(navy::tackle_assist::boast::Request),
-    NavyTackleAssistCheck(navy::tackle_assist::check::Request),
-    NavyTackleAssistScoreboard(navy::tackle_assist::scoreboard::Request<'a>),
-    NavyTackleAssistClearUnknown(navy::tackle_assist::clear::Request),
+    NavyTackleAssistRecord(lib::generic_tracker::record::Request),
+    NavyTackleAssistDelete(lib::generic_tracker::delete::Request),
+    NavyTackleAssistBoast(lib::generic_tracker::boast::Request),
+    NavyTackleAssistCheck(lib::generic_tracker::check::Request),
+    NavyTackleAssistScoreboard(lib::generic_tracker::scoreboard::Request<'a>),
+    NavyTackleAssistClearUnknown(lib::generic_tracker::clear::Request),
 
-    LegionKillRecord(legion::kill::record::Request),
-    LegionKillDelete(legion::kill::delete::Request),
-    LegionKillBoast(legion::kill::boast::Request),
-    LegionKillCheck(legion::kill::check::Request),
-    LegionKillScoreboard(legion::kill::scoreboard::Request<'a>),
-    LegionKillClearUnknown(legion::kill::clear::Request),
+    LegionKillRecord(lib::generic_tracker::record::Request),
+    LegionKillDelete(lib::generic_tracker::delete::Request),
+    LegionKillBoast(lib::generic_tracker::boast::Request),
+    LegionKillCheck(lib::generic_tracker::check::Request),
+    LegionKillScoreboard(lib::generic_tracker::scoreboard::Request<'a>),
+    LegionKillClearUnknown(lib::generic_tracker::clear::Request),
 
     MonthlyGoalCheck(monthly_goal::check::Request<'a>),
     MonthlyGoalSet(monthly_goal::set::Request<'a>),
@@ -365,7 +363,7 @@ impl DiscordCommandDescriptor for RequestKind {
                         required: false,
                     },
                     RawCommandOptionEntry::Integer {
-                        name: "count",
+                        name: "total",
                         description: "Number of events being recorded, defaults to 1",
                         required: false,
                     },
@@ -384,7 +382,7 @@ impl DiscordCommandDescriptor for RequestKind {
                         required: false,
                     },
                     RawCommandOptionEntry::Integer {
-                        name: "count",
+                        name: "total",
                         description: "Number of events being recorded, defaults to 1",
                         required: false,
                     },
@@ -426,7 +424,7 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::IndustryProfitDelete => {
                 vec![
                     RawCommandOptionEntry::Integer {
-                        name: "auec",
+                        name: "total",
                         description: "Number of alpha UEC.",
                         required: false,
                     },
@@ -494,7 +492,7 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::NavyVictoryRecord => {
                 vec![
                     RawCommandOptionEntry::Number {
-                        name: "victories",
+                        name: "total",
                         description: "Number of victories. Only accepts values in intervals of 0.25. Defaults to 1.",
                         required: false,
                     },
@@ -508,7 +506,7 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::NavyVictoryDelete => {
                 vec![
                     RawCommandOptionEntry::Number {
-                        name: "victories",
+                        name: "total",
                         description: "Number of victories. Only accepts values in intervals of 0.25. Defaults to 1.",
                         required: false,
                     },
@@ -569,7 +567,7 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::NavyTackleAssistRecord => {
                 vec![
                     RawCommandOptionEntry::Integer {
-                        name: "tackle_assists",
+                        name: "total",
                         description: "Number of tackle assists. Defaults to 1.",
                         required: false,
                     },
@@ -583,7 +581,7 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::NavyTackleAssistDelete => {
                 vec![
                     RawCommandOptionEntry::Integer {
-                        name: "tackle_assists",
+                        name: "total",
                         description: "Number of tackle assists. Defaults to 1.",
                         required: false,
                     },
@@ -644,7 +642,7 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::LegionKillRecord => {
                 vec![
                     RawCommandOptionEntry::Integer {
-                        name: "kills",
+                        name: "total",
                         description: "Number of kills. Only accepts values in intervals of 0.25. Defaults to 1.",
                         required: false,
                     },
@@ -658,7 +656,7 @@ impl DiscordCommandDescriptor for RequestKind {
             RequestKind::LegionKillDelete => {
                 vec![
                     RawCommandOptionEntry::Integer {
-                        name: "kills",
+                        name: "total",
                         description: "Number of kills. Only accepts values in intervals of 0.25. Defaults to 1.",
                         required: false,
                     },
@@ -1059,10 +1057,10 @@ impl DiscordCommandDescriptor for RequestKind {
                 }
             },
             "Record One Naval Victory" => {
-                Ok(RequestArgs::NavyVictoryRecord(navy::victory::record::Request::parse(cmd, &[])?))
+                Ok(RequestArgs::NavyVictoryRecord(lib::generic_tracker::record::Request::parse(cmd, crate::db::TrackerStat::NavyVictory, &[])?))
             },
             "Check Naval Victories" => {
-                Ok(RequestArgs::NavyVictoryCheck(navy::victory::check::Request::parse(cmd, &[])?))
+                Ok(RequestArgs::NavyVictoryCheck(lib::generic_tracker::check::Request::parse(cmd, crate::db::TrackerStat::NavyVictory, &[])?))
             },
             "navy" => {
                 let tier0_options: Vec<ResolvedOption<'a>> = cmd.data.options();
@@ -1082,22 +1080,22 @@ impl DiscordCommandDescriptor for RequestKind {
                         };
                         match tier2.name {
                             "record" => {
-                                Ok(RequestArgs::NavyVictoryRecord(navy::victory::record::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::NavyVictoryRecord(lib::generic_tracker::record::Request::parse(cmd, crate::db::TrackerStat::NavyVictory, tier2_options.as_slice())?))
                             },
                             "delete" => {
-                                Ok(RequestArgs::NavyVictoryDelete(navy::victory::delete::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::NavyVictoryDelete(lib::generic_tracker::delete::Request::parse(cmd, crate::db::TrackerStat::NavyVictory, tier2_options.as_slice())?))
                             },
                             "boast" => {
-                                Ok(RequestArgs::NavyVictoryBoast(navy::victory::boast::Request::parse(cmd, &[])?))
+                                Ok(RequestArgs::NavyVictoryBoast(lib::generic_tracker::boast::Request::parse(cmd, crate::db::TrackerStat::NavyVictory, &[])?))
                             },
                             "check" => {
-                                Ok(RequestArgs::NavyVictoryCheck(navy::victory::check::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::NavyVictoryCheck(lib::generic_tracker::check::Request::parse(cmd, crate::db::TrackerStat::NavyVictory, tier2_options.as_slice())?))
                             },
                             "scoreboard" => {
-                                Ok(RequestArgs::NavyVictoryScoreboard(navy::victory::scoreboard::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::NavyVictoryScoreboard(lib::generic_tracker::scoreboard::Request::parse(cmd, crate::db::TrackerStat::NavyVictory, tier2_options.as_slice())?))
                             },
                             "clear_unknown" => {
-                                Ok(RequestArgs::NavyVictoryClearUnknown(navy::victory::clear::Request::parse(cmd, &[])?))
+                                Ok(RequestArgs::NavyVictoryClearUnknown(lib::generic_tracker::clear::Request::parse(cmd, crate::db::TrackerStat::NavyVictory, &[])?))
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
@@ -1117,22 +1115,22 @@ impl DiscordCommandDescriptor for RequestKind {
                         };
                         match tier2.name {
                             "record" => {
-                                Ok(RequestArgs::NavyTackleAssistRecord(navy::tackle_assist::record::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::NavyTackleAssistRecord(lib::generic_tracker::record::Request::parse(cmd, crate::db::TrackerStat::NavyTackleAssist, tier2_options.as_slice())?))
                             },
                             "delete" => {
-                                Ok(RequestArgs::NavyTackleAssistDelete(navy::tackle_assist::delete::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::NavyTackleAssistDelete(lib::generic_tracker::delete::Request::parse(cmd, crate::db::TrackerStat::NavyTackleAssist, tier2_options.as_slice())?))
                             },
                             "boast" => {
-                                Ok(RequestArgs::NavyTackleAssistBoast(navy::tackle_assist::boast::Request::parse(cmd, &[])?))
+                                Ok(RequestArgs::NavyTackleAssistBoast(lib::generic_tracker::boast::Request::parse(cmd, crate::db::TrackerStat::NavyTackleAssist, &[])?))
                             },
                             "check" => {
-                                Ok(RequestArgs::NavyTackleAssistCheck(navy::tackle_assist::check::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::NavyTackleAssistCheck(lib::generic_tracker::check::Request::parse(cmd, crate::db::TrackerStat::NavyTackleAssist, tier2_options.as_slice())?))
                             },
                             "scoreboard" => {
-                                Ok(RequestArgs::NavyTackleAssistScoreboard(navy::tackle_assist::scoreboard::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::NavyTackleAssistScoreboard(lib::generic_tracker::scoreboard::Request::parse(cmd, crate::db::TrackerStat::NavyTackleAssist, tier2_options.as_slice())?))
                             },
                             "clear_unknown" => {
-                                Ok(RequestArgs::NavyTackleAssistClearUnknown(navy::tackle_assist::clear::Request::parse(cmd, &[])?))
+                                Ok(RequestArgs::NavyTackleAssistClearUnknown(lib::generic_tracker::clear::Request::parse(cmd, crate::db::TrackerStat::NavyTackleAssist, &[])?))
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
@@ -1164,22 +1162,22 @@ impl DiscordCommandDescriptor for RequestKind {
                         };
                         match tier2.name {
                             "record" => {
-                                Ok(RequestArgs::LegionKillRecord(legion::kill::record::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::LegionKillRecord(lib::generic_tracker::record::Request::parse(cmd, crate::db::TrackerStat::GroundKill, tier2_options.as_slice())?))
                             },
                             "delete" => {
-                                Ok(RequestArgs::LegionKillDelete(legion::kill::delete::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::LegionKillDelete(lib::generic_tracker::delete::Request::parse(cmd, crate::db::TrackerStat::GroundKill, tier2_options.as_slice())?))
                             },
                             "boast" => {
-                                Ok(RequestArgs::LegionKillBoast(legion::kill::boast::Request::parse(cmd, &[])?))
+                                Ok(RequestArgs::LegionKillBoast(lib::generic_tracker::boast::Request::parse(cmd, crate::db::TrackerStat::GroundKill, &[])?))
                             },
                             "check" => {
-                                Ok(RequestArgs::LegionKillCheck(legion::kill::check::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::LegionKillCheck(lib::generic_tracker::check::Request::parse(cmd, crate::db::TrackerStat::GroundKill, tier2_options.as_slice())?))
                             },
                             "scoreboard" => {
-                                Ok(RequestArgs::LegionKillScoreboard(legion::kill::scoreboard::Request::parse(cmd, tier2_options.as_slice())?))
+                                Ok(RequestArgs::LegionKillScoreboard(lib::generic_tracker::scoreboard::Request::parse(cmd, crate::db::TrackerStat::GroundKill, tier2_options.as_slice())?))
                             },
                             "clear_unknown" => {
-                                Ok(RequestArgs::LegionKillClearUnknown(legion::kill::clear::Request::parse(cmd, &[])?))
+                                Ok(RequestArgs::LegionKillClearUnknown(lib::generic_tracker::clear::Request::parse(cmd, crate::db::TrackerStat::GroundKill, &[])?))
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);

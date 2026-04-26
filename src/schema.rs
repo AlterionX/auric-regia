@@ -1,28 +1,6 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    legion_kill_count_changes (id) {
-        id -> Int8,
-        created -> Timestamptz,
-        updater -> Numeric,
-        target -> Numeric,
-        kills -> Numeric,
-        guild_id -> Numeric,
-    }
-}
-
-diesel::table! {
-    legion_kill_counts (id) {
-        user_id -> Numeric,
-        created -> Timestamptz,
-        updated -> Timestamptz,
-        kills -> Numeric,
-        guild_id -> Numeric,
-        id -> Int8,
-    }
-}
-
-diesel::table! {
     monthly_goals (id) {
         id -> Int8,
         created -> Timestamptz,
@@ -38,52 +16,6 @@ diesel::table! {
         shortname -> Varchar,
         disabled -> Nullable<Timestamptz>,
         guild_id -> Numeric,
-    }
-}
-
-diesel::table! {
-    naval_tackle_assist_count_changes (id) {
-        id -> Int8,
-        created -> Timestamptz,
-        updater -> Numeric,
-        target -> Numeric,
-        tackle_assists -> Numeric,
-        #[max_length = 10000]
-        user_note -> Nullable<Varchar>,
-        guild_id -> Numeric,
-    }
-}
-
-diesel::table! {
-    naval_tackle_assist_counts (id) {
-        user_id -> Numeric,
-        created -> Timestamptz,
-        updated -> Timestamptz,
-        tackle_assists -> Numeric,
-        guild_id -> Numeric,
-        id -> Int8,
-    }
-}
-
-diesel::table! {
-    naval_victory_count_changes (id) {
-        id -> Int8,
-        created -> Timestamptz,
-        updater -> Numeric,
-        target -> Numeric,
-        victory_fourths -> Numeric,
-        guild_id -> Numeric,
-    }
-}
-
-diesel::table! {
-    naval_victory_counts (id) {
-        user_id -> Numeric,
-        created -> Timestamptz,
-        updated -> Timestamptz,
-        victory_fourths -> Numeric,
-        guild_id -> Numeric,
-        id -> Int8,
     }
 }
 
@@ -116,13 +48,7 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
-    legion_kill_count_changes,
-    legion_kill_counts,
     monthly_goals,
-    naval_tackle_assist_count_changes,
-    naval_tackle_assist_counts,
-    naval_victory_count_changes,
-    naval_victory_counts,
     tracker_count_changes,
     tracker_counts,
 );
