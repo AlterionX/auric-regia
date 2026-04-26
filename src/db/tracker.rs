@@ -28,11 +28,11 @@ mod tracker_stat {
         EventParticipation,
         #[strum(serialize = "industry_auec")]
         IndustryAuec,
-        #[strum(serialize = "human_kill")]
+        #[strum(serialize = "ground_kill")]
         GroundKill,
-        #[strum(serialize = "navy_victory")]
+        #[strum(serialize = "naval_victory")]
         NavyVictory,
-        #[strum(serialize = "tackle_assist")]
+        #[strum(serialize = "naval_tackle_assist")]
         NavyTackleAssist,
     }
 
