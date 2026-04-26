@@ -17,7 +17,7 @@ SELECT
     target,
     total,
     user_note
-FROM tracker_count_changes;
+FROM event_participation_count_changes;
 
 INSERT INTO tracker_counts (
     created,
@@ -34,7 +34,7 @@ SELECT
     guild_id,
     user_id,
     total
-FROM tracker_counts;
+FROM event_participation_counts;
 
 DROP INDEX unique_event_participation_count_per_guild_per_user;
 DROP TABLE event_participation_counts, event_participation_count_changes;

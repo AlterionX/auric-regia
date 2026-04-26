@@ -13,7 +13,7 @@ SELECT
     updater,
     target,
     total
-FROM tracker_count_changes;
+FROM industry_profit_count_changes;
 
 INSERT INTO tracker_counts (
     created,
@@ -30,7 +30,7 @@ SELECT
     guild_id,
     user_id,
     total
-FROM tracker_counts;
+FROM industry_profit_counts;
 
 DROP INDEX unique_industry_profit_count_per_guild_per_user;
 DROP TABLE industry_profit_count_changes, industry_profit_counts;
