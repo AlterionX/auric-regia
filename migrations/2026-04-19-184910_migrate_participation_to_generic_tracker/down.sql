@@ -38,6 +38,9 @@ FROM tracker_count_changes
 WHERE
     stat = 'event_participation';
 
+DELETE FROM tracker_count_changes
+WHERE stat = 'event_participation';
+
 INSERT INTO event_participation_counts (
     user_id,
     created,
@@ -54,5 +57,9 @@ SELECT
 FROM tracker_counts
 WHERE
     stat = 'event_participation';
+
+DELETE FROM tracker_counts
+WHERE stat = 'event_participation';
+
 
 ALTER TABLE tracker_count_changes DROP COLUMN user_note;
