@@ -78,7 +78,7 @@ mod tracker_stat {
         }
 
         pub fn format_count(&self, db_value: BigDecimal) -> String {
-            let display_value = db_value / self.denominator();
+            let display_value = self.display_value(db_value);
             let singular = display_value.is_one_quickcheck().unwrap_or(false);
             let counter_text = match self {
                 Self::PersonnelSaved => "personnel saved",
@@ -109,11 +109,15 @@ mod tracker_stat {
                 },
             };
 
-            format!("{:.2} {}", display_value, counter_text)
+            if display_value.is_integer() {
+                format!("{} {}", display_value, counter_text)
+            } else {
+                format!("{:.2} {}", display_value, counter_text)
+            }
         }
 
         pub fn format_count_as_past_participle(&self, db_value: BigDecimal) -> String {
-            let display_value = db_value / self.denominator();
+            let display_value = self.display_value(db_value);
             let singular = display_value.is_one_quickcheck().unwrap_or(false);
             let (past_participle, counter_text) = match self {
                 Self::PersonnelSaved => ("saved", "personnel"),
@@ -144,7 +148,11 @@ mod tracker_stat {
                 },
             };
 
-            format!("{}{:.2} {}", past_participle, display_value, counter_text)
+            if display_value.is_integer() {
+                format!("{}{} {}", past_participle, display_value, counter_text)
+            } else {
+                format!("{}{:.2} {}", past_participle, display_value, counter_text)
+            }
         }
 
         pub fn display_value(&self, db_value: BigDecimal) -> BigDecimal {
@@ -186,7 +194,7 @@ mod tracker_stat {
                 Self::EventParticipation => 1,
                 Self::IndustryAuec => 1,
                 Self::GroundKill => 1,
-                Self::NavyVictory => 4,
+                Self::NavyVictory => 1,
                 Self::NavyTackleAssist => 1,
             }.into()
         }
