@@ -322,13 +322,13 @@ impl DiscordCommandDescriptor for RequestKind {
                 "Deletes a certain number of kills for a user."
             },
             RequestKind::LegionKillBoast => {
-                "Boast about your legion kills."
+                "Boast about your ground kills."
             },
             RequestKind::LegionKillCheck => {
-                "Checks the number of legion kills for a specific user (or yourself)."
+                "Checks the number of ground kills for a specific user (or yourself)."
             },
             RequestKind::LegionKillScoreboard => {
-                "Creates the scoreboard of legion kills across Auric."
+                "Creates the scoreboard of ground kills across Auric."
             },
             RequestKind::LegionKillClearUnknown => {
                 "Removes old unknown users from the scoreboard"
@@ -723,8 +723,8 @@ impl DiscordCommandDescriptor for RequestKind {
                         choices: vec![
                             ("Main (default)", "main"),
                             ("Navy", "navy"),
-                            ("Legion", "legion"),
-                            ("Industry", "industry"),
+                            ("Ground", "ground"),
+                            ("Industrial", "industrial"),
                         ],
                     },
                     RawCommandOptionEntry::Boolean {
@@ -775,8 +775,8 @@ impl DiscordCommandDescriptor for RequestKind {
                         choices: vec![
                             ("Main (default)", "main"),
                             ("Navy", "navy"),
-                            ("Legion", "legion"),
-                            ("Industry", "industry"),
+                            ("Ground", "ground"),
+                            ("Industrial", "industrial"),
                         ],
                     },
                 ]
@@ -992,21 +992,21 @@ impl DiscordCommandDescriptor for RequestKind {
                     },
                 }
             },
-            "industry" => {
+            "industrial" => {
                 let tier0_options = cmd.data.options();
                 let Some(tier1) = tier0_options.first() else {
-                    return Err(RequestError::Internal("Missing options for `industry`.".into()));
+                    return Err(RequestError::Internal("Missing options for `industrial`.".into()));
                 };
                 match tier1.name {
                     "profit" => {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
-                            return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
+                            return Err(RequestError::Internal("Missing subcommand group for `industrial`.".into()));
                         };
                         let Some(tier2) = tier1_options.first() else {
-                            return Err(RequestError::Internal("Missing options for `industry profit`.".into()));
+                            return Err(RequestError::Internal("Missing options for `industrial profit`.".into()));
                         };
                         let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
-                            return Err(RequestError::Internal("Missing subcommand for `industry profit`.".into()));
+                            return Err(RequestError::Internal("Missing subcommand for `industrial profit`.".into()));
                         };
                         match tier2.name {
                             "record" => {
@@ -1029,30 +1029,30 @@ impl DiscordCommandDescriptor for RequestKind {
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
-                                Err(RequestError::Internal("Unknown subcommand for `industry profit`".into()))
+                                Err(RequestError::Internal("Unknown subcommand for `industrial profit`".into()))
                             },
                         }
                     },
                     "mining" => {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
-                            return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
+                            return Err(RequestError::Internal("Missing subcommand group for `industrial`.".into()));
                         };
                         let Some(tier2) = tier1_options.first() else {
-                            return Err(RequestError::Internal("Missing options for `industry mining`.".into()));
+                            return Err(RequestError::Internal("Missing options for `industrial mining`.".into()));
                         };
                         let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
-                            return Err(RequestError::Internal("Missing subcommand for `industry mining`.".into()));
+                            return Err(RequestError::Internal("Missing subcommand for `industrial mining`.".into()));
                         };
                         if tier2.name != "record" {
-                            return Err(RequestError::Internal("Unknown subcommand for `industry mining`.".into()));
+                            return Err(RequestError::Internal("Unknown subcommand for `industrial mining`.".into()));
                         }
                         if !tier2_options.is_empty() {
-                            return Err(RequestError::Internal("Extra options for `industry mining`".into()));
+                            return Err(RequestError::Internal("Extra options for `industrial mining`".into()));
                         }
                         Ok(RequestArgs::IndustryMiningRockRecord)
                     },
                     _ => {
-                        Err(RequestError::Internal("Bad subcommand for `industry`.".into()))
+                        Err(RequestError::Internal("Bad subcommand for `industrial`.".into()))
                     },
                 }
             },
@@ -1144,21 +1144,21 @@ impl DiscordCommandDescriptor for RequestKind {
                     },
                 }
             },
-            "legion" => {
+            "ground" => {
                 let tier0_options: Vec<ResolvedOption<'a>> = cmd.data.options();
                 let Some(tier1) = tier0_options.first() else {
-                    return Err(RequestError::Internal("Missing options for `legion`.".into()));
+                    return Err(RequestError::Internal("Missing options for `ground`.".into()));
                 };
                 match tier1.name {
                     "kill" => {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
-                            return Err(RequestError::Internal("Missing subcommand group for `legion`".into()));
+                            return Err(RequestError::Internal("Missing subcommand group for `ground`".into()));
                         };
                         let Some(tier2) = tier1_options.first() else {
-                            return Err(RequestError::Internal("Missing options for `legion kill`".into()));
+                            return Err(RequestError::Internal("Missing options for `ground kill`".into()));
                         };
                         let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
-                            return Err(RequestError::Internal("Missing subcommand for `legion kill`".into()));
+                            return Err(RequestError::Internal("Missing subcommand for `ground kill`".into()));
                         };
                         match tier2.name {
                             "record" => {
@@ -1181,13 +1181,13 @@ impl DiscordCommandDescriptor for RequestKind {
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
-                                Err(RequestError::Internal("Unknown subcommand for `legion kill`".into()))
+                                Err(RequestError::Internal("Unknown subcommand for `ground kill`".into()))
                             },
                         }
                     },
                     _ => {
                         trc::warn!("Unknown subcommand {:?}", tier1);
-                        Err(RequestError::Internal("Unknown subcommand for `legion`".into()))
+                        Err(RequestError::Internal("Unknown subcommand for `ground`".into()))
                     },
                 }
             },
@@ -1223,7 +1223,7 @@ impl DiscordCommandDescriptor for RequestKind {
                     },
                     "progress" => {
                         let ResolvedValue::SubCommandGroup(ref tier1_options) = tier1.value else {
-                            return Err(RequestError::Internal("Missing subcommand group for `industry`.".into()));
+                            return Err(RequestError::Internal("Missing subcommand group for `monthly_goal progress`.".into()));
                         };
                         let Some(tier2) = tier1_options.first() else {
                             return Err(RequestError::Internal("Missing options for `monthly_goal progress`.".into()));
@@ -1231,7 +1231,7 @@ impl DiscordCommandDescriptor for RequestKind {
                         let ResolvedValue::SubCommand(ref tier2_options) = tier2.value else {
                             return Err(RequestError::Internal("Missing subcommand for `monthly_goal progress`.".into()));
                         };
-                        // All monghtly goal progress tracking has stuff.
+                        // All monhtly goal progress tracking has stuff.
                         let stat = {
                             let Some(stat_opt) = tier2_options.iter().find(|opt| opt.name == "stat") else {
                                 return Err(RequestError::Internal("Missing required option for `monthly_goal progress`.".into()));
@@ -1265,13 +1265,13 @@ impl DiscordCommandDescriptor for RequestKind {
                             },
                             _ => {
                                 trc::warn!("Unknown subcommand {:?}", tier1);
-                                Err(RequestError::Internal("Unknown subcommand for `industry saved_personnel`".into()))
+                                Err(RequestError::Internal(format!("Unknown subcommand for `{}`", stat.cmd_name()).into()))
                             },
                         }
                     },
                     _ => {
                         trc::warn!("Unknown subcommand {:?}", tier1);
-                        Err(RequestError::Internal("Unknown subcommand for `legion kill`".into()))
+                        Err(RequestError::Internal("Unknown subcommand for `ground kill`".into()))
                     },
                 }
             },
@@ -1321,7 +1321,7 @@ impl <'a> DiscordCommandArgs for RequestArgs<'a> {
             },
 
             RequestArgs::IndustryMiningRockRecord => {
-                ctx.reply("Industry mining number crunching not yet implemented.".to_owned()).await
+                ctx.reply("Industrial mining number crunching not yet implemented.".to_owned()).await
             },
 
             RequestArgs::IndustryProfitRecord(req) => {
@@ -1439,8 +1439,8 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
             ],
         },
         CommandTreeTop::Complex {
-            name: "industry".into(),
-            description: "Industry commands".into(),
+            name: "industrial".into(),
+            description: "Industrial commands".into(),
             kind: CommandType::ChatInput,
             opt_default_perm: None,
             subcommands: vec![],
@@ -1503,8 +1503,8 @@ pub fn generate_command_descriptions() -> Vec<CommandTreeTop<RequestKind>> {
             ],
         },
         CommandTreeTop::Complex {
-            name: "legion".into(),
-            description: "Legion commands".into(),
+            name: "ground".into(),
+            description: "Ground commands".into(),
             kind: CommandType::ChatInput,
             opt_default_perm: None,
             subcommands: vec![],

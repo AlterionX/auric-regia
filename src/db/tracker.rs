@@ -63,7 +63,7 @@ mod tracker_stat {
             match self {
                 Self::PersonnelSaved => "Personnel Saved",
                 Self::EventParticipation => "Event Participation",
-                Self::IndustryAuec => "Industry Profit",
+                Self::IndustryAuec => "Industrial Profit",
                 Self::GroundKill => "Ground Kill",
                 Self::NavyVictory => "Navy Victory",
                 Self::NavyTackleAssist => "Navy Tackle Assist",
@@ -181,7 +181,7 @@ mod tracker_stat {
             match self {
                 Self::PersonnelSaved => "monthly_goal progress",
                 Self::EventParticipation => "events participation",
-                Self::IndustryAuec => "industry profit",
+                Self::IndustryAuec => "industrial profit",
                 Self::GroundKill => "ground kill",
                 Self::NavyVictory => "navy victory",
                 Self::NavyTackleAssist => "navy tackle_assist",

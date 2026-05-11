@@ -239,8 +239,8 @@ impl<'a> Request<'a> {
 pub fn fetch_branch_display_name(branch: &str) -> &'static str {
     match branch {
         "navy" => "Navy",
-        "legion" => "Legion",
-        "industry" => "Industry",
+        "ground" => "Ground",
+        "industrial" => "Industrial",
         "main" => "Main",
         _ => "Other",
     }
@@ -249,8 +249,8 @@ pub fn fetch_branch_display_name(branch: &str) -> &'static str {
 pub fn fetch_branch_color(branch: &str) -> crossterm::style::Color {
     match branch {
         "navy" => Some(crossterm::style::Color::AnsiValue(34)),
-        "legion" => Some(crossterm::style::Color::AnsiValue(32)),
-        "industry" => Some(crossterm::style::Color::AnsiValue(35)),
+        "ground" => Some(crossterm::style::Color::AnsiValue(31)),
+        "industrial" => Some(crossterm::style::Color::AnsiValue(35)),
         "main" => Some(crossterm::style::Color::AnsiValue(33)),
         _ => Some(crossterm::style::Color::White),
     }.expect(branch)
@@ -262,7 +262,7 @@ mod test {
 
     #[test]
     fn test_ansi_parse() {
-        for branch in ["navy", "legion", "industry"] {
+        for branch in ["navy", "ground", "industrial"] {
             fetch_branch_color(branch);
         }
     }
