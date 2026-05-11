@@ -41,7 +41,7 @@ impl<'a> Request<'a> {
                         return Err(RequestError::Internal(format!("Bad value for `limit` in `{} scoreboard`.", stat.cmd_name()).into()));
                     };
                     if lim > 50 {
-                        trc::error!("Bad value for `limit` in `legion kill scoreboard` {:?}", opt);
+                        trc::error!("Bad value for `limit` in `{} scoreboard` {:?}", stat.cmd_name(), opt);
                         return Err(RequestError::User("You can only show 50 users per command.".into()));
                     }
                     limit = lim;
